@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx jest *)",
+      "Bash(npm test *)",
+      "Bash(npm run test *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Un archivo TypeScript fue modificado. Input del hook: $ARGUMENTS\n\nSigue estos pasos:\n1. Parsea el JSON en $ARGUMENTS y extrae tool_input.file_path\n2. Si el archivo NO está en src/, NO termina en .ts, termina en .spec.ts, o es src/main.ts → termina sin hacer nada\n3. Deriva la ruta del spec: reemplaza .ts por .spec.ts (ej: src/app.service.ts → src/app.service.spec.ts)\n4. Lee el archivo fuente para entender su contenido\n5. Si el spec NO existe: genera un test unitario NestJS completo con @nestjs/testing, mocks de dependencias, y casos de prueba para cada método público\n6. Si el spec YA existe y la modificación añadió métodos nuevos: actualiza los tests\n7. Ejecuta: npx jest --testPathPattern=\"<nombre-spec>\" --passWithNoTests --no-coverage\n8. Si fallan: corrige el test (no el source) y reejecutar\n9. Reporta: archivo spec creado/actualizado + resultado PASS/FAIL",
+            "statusMessage": "Generando y validando tests...",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
