@@ -3,6 +3,8 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -55,6 +57,19 @@ export class Profile {
 
   @Column({ nullable: true, type: 'varchar' })
   emergencyContactRelationship!: string | null;
+
+  // ── Contacts ───────────────────────────────────────────────────────────────
+
+  @ManyToMany(() => Profile, (profile) => profile.addedBy)
+  @JoinTable({
+    name: 'profile_contacts',
+    joinColumn: { name: 'owner_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'contact_id', referencedColumnName: 'id' },
+  })
+  contacts!: Profile[];
+
+  @ManyToMany(() => Profile, (profile) => profile.contacts)
+  addedBy!: Profile[];
 
   @CreateDateColumn()
   createdAt!: Date;

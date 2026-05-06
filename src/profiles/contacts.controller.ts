@@ -1,0 +1,31 @@
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ProfilesService, RequestUser } from './profiles.service';
+
+interface AuthenticatedRequest extends Request {
+  user: RequestUser;
+}
+
+@Controller('profiles/contacts')
+export class ContactsController {
+  constructor(private readonly profilesService: ProfilesService) {}
+
+  @Get('suggestions')
+  @UseGuards(JwtAuthGuard)
+  getSuggestedContacts(@Request() req: AuthenticatedRequest) {
+    return this.profilesService.getSuggestedContacts(req.user.id);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  getContacts(@Request() req: AuthenticatedRequest) {
+    return this.profilesService.getContacts(req.user.id);
+  }
+
+  @Post(':alias')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  addContact(@Param('alias') alias: string, @Request() req: AuthenticatedRequest) {
+    return this.profilesService.addContact(req.user.id, alias);
+  }
+}

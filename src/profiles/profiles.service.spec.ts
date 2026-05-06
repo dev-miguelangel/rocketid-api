@@ -6,6 +6,14 @@ import { UserRole } from '../users/entities/user.entity';
 import { Profile } from './entities/profile.entity';
 import { ProfilesService, RequestUser } from './profiles.service';
 
+const buildQb = () => ({
+  innerJoin: jest.fn().mockReturnThis(),
+  leftJoin: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  setParameter: jest.fn().mockReturnThis(),
+  getMany: jest.fn(),
+});
+
 const mockRepo = () => ({
   findOneBy: jest.fn(),
   findOne: jest.fn(),
@@ -13,6 +21,7 @@ const mockRepo = () => ({
   create: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
+  createQueryBuilder: jest.fn(),
 });
 
 const adminUser: RequestUser = { id: 'admin-1', email: 'a@a.com', name: 'Admin', role: UserRole.ADMIN };
@@ -166,6 +175,107 @@ describe('ProfilesService', () => {
       const result = await service.update('p-1', { alias: 'NewAlias' }, regularUser);
 
       expect(result.alias).toBe('newalias');
+    });
+  });
+
+  // ── addContact ────────────────────────────────────────────────────────────
+
+  describe('addContact', () => {
+    const contactProfile = { id: 'p-2', alias: 'friend' } as Profile;
+    let ownerProfile: Profile;
+
+    beforeEach(() => {
+      ownerProfile = { id: 'p-1', userId: 'user-1', contacts: [] } as unknown as Profile;
+      repo.findOne.mockResolvedValue(ownerProfile);
+      repo.findOneBy.mockResolvedValue(contactProfile);
+      repo.save.mockImplementation((p) => Promise.resolve(p as Profile));
+    });
+
+    it('strips leading @ and lowercases alias before lookup', async () => {
+      await service.addContact('user-1', '@Friend');
+
+      expect(repo.findOneBy).toHaveBeenCalledWith({ alias: 'friend' });
+    });
+
+    it('throws NotFoundException when owner has no profile', async () => {
+      repo.findOne.mockResolvedValue(null);
+
+      await expect(service.addContact('ghost', 'friend')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws NotFoundException when contact alias does not exist', async () => {
+      repo.findOneBy.mockResolvedValue(null);
+
+      await expect(service.addContact('user-1', 'unknown')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when adding self', async () => {
+      repo.findOneBy.mockResolvedValue(ownerProfile);
+
+      await expect(service.addContact('user-1', 'myself')).rejects.toThrow(ConflictException);
+    });
+
+    it('throws ConflictException when contact is already added', async () => {
+      const ownerWithContact = { ...ownerProfile, contacts: [contactProfile] } as unknown as Profile;
+      repo.findOne.mockResolvedValue(ownerWithContact);
+
+      await expect(service.addContact('user-1', 'friend')).rejects.toThrow(ConflictException);
+    });
+
+    it('pushes contact and saves', async () => {
+      const result = await service.addContact('user-1', 'friend');
+
+      expect(repo.save).toHaveBeenCalled();
+      expect(result.contacts).toContain(contactProfile);
+    });
+  });
+
+  // ── getContacts ───────────────────────────────────────────────────────────
+
+  describe('getContacts', () => {
+    it('returns contacts list for the owner', async () => {
+      const contacts = [{ id: 'p-2' }] as Profile[];
+      repo.findOne.mockResolvedValue({ id: 'p-1', userId: 'user-1', contacts } as unknown as Profile);
+
+      const result = await service.getContacts('user-1');
+
+      expect(repo.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 'user-1' }, relations: ['contacts'] }));
+      expect(result).toBe(contacts);
+    });
+
+    it('throws NotFoundException when owner has no profile', async () => {
+      repo.findOne.mockResolvedValue(null);
+
+      await expect(service.getContacts('ghost')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── getSuggestedContacts ──────────────────────────────────────────────────
+
+  describe('getSuggestedContacts', () => {
+    it('throws NotFoundException when owner has no profile', async () => {
+      repo.findOneBy.mockResolvedValue(null);
+
+      await expect(service.getSuggestedContacts('ghost')).rejects.toThrow(NotFoundException);
+    });
+
+    it('uses QueryBuilder with LEFT JOIN null check and returns results', async () => {
+      const ownerProfile = { id: 'p-1', userId: 'user-1' } as Profile;
+      const suggestions = [{ id: 'p-3' }] as Profile[];
+      const qb = buildQb();
+      qb.getMany.mockResolvedValue(suggestions);
+
+      repo.findOneBy.mockResolvedValue(ownerProfile);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.getSuggestedContacts('user-1');
+
+      expect(repo.createQueryBuilder).toHaveBeenCalledWith('p');
+      expect(qb.innerJoin).toHaveBeenCalled();
+      expect(qb.leftJoin).toHaveBeenCalled();
+      expect(qb.where).toHaveBeenCalledWith('pc_mine.contact_id IS NULL');
+      expect(qb.setParameter).toHaveBeenCalledWith('profileId', 'p-1');
+      expect(result).toBe(suggestions);
     });
   });
 

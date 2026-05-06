@@ -115,6 +115,57 @@ export class ProfilesService {
     await this.profileRepository.remove(profile);
   }
 
+  async addContact(userId: string, contactAlias: string): Promise<Profile> {
+    const alias = contactAlias.replace(/^@/, '').toLowerCase();
+
+    const [ownerProfile, contactProfile] = await Promise.all([
+      this.profileRepository.findOne({ where: { userId }, relations: ['contacts'] }),
+      this.profileRepository.findOneBy({ alias }),
+    ]);
+
+    if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
+    if (!contactProfile) throw new NotFoundException('El alias no existe');
+    if (ownerProfile.id === contactProfile.id) {
+      throw new ConflictException('No puedes agregarte a ti mismo');
+    }
+    if (ownerProfile.contacts.some((c) => c.id === contactProfile.id)) {
+      throw new ConflictException('El contacto ya está en tu lista');
+    }
+
+    ownerProfile.contacts.push(contactProfile);
+    return this.profileRepository.save(ownerProfile);
+  }
+
+  async getContacts(userId: string): Promise<Profile[]> {
+    const ownerProfile = await this.profileRepository.findOne({
+      where: { userId },
+      relations: ['contacts'],
+    });
+    if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
+    return ownerProfile.contacts;
+  }
+
+  async getSuggestedContacts(userId: string): Promise<Profile[]> {
+    const ownerProfile = await this.profileRepository.findOneBy({ userId });
+    if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
+
+    return this.profileRepository
+      .createQueryBuilder('p')
+      .innerJoin(
+        'profile_contacts',
+        'pc_added',
+        'pc_added.owner_id = p.id AND pc_added.contact_id = :profileId',
+      )
+      .leftJoin(
+        'profile_contacts',
+        'pc_mine',
+        'pc_mine.owner_id = :profileId AND pc_mine.contact_id = p.id',
+      )
+      .where('pc_mine.contact_id IS NULL')
+      .setParameter('profileId', ownerProfile.id)
+      .getMany();
+  }
+
   private async generateUniqueStringId(): Promise<string> {
     for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
       const candidate = this.buildStringId();
