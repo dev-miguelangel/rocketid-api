@@ -8,7 +8,6 @@ import {
   UseGuards,
   HttpCode,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -19,6 +18,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { GoogleTokenDto } from './dto/google-token.dto';
 
 interface JwtUser {
   id: string;
@@ -59,6 +59,19 @@ export class AuthController {
     const frontendUrl = allowedOrigins.includes(state) ? state : allowedOrigins[0];
 
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+  }
+
+  // ── Google Native Token ───────────────────────────────
+
+  @Post('google/token')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Login con Google SDK nativo', description: 'Verifica el idToken emitido por el SDK de Google y devuelve tokens de sesión.' })
+  @ApiBody({ type: GoogleTokenDto })
+  @ApiResponse({ status: 200, description: 'Access token y refresh token generados.' })
+  @ApiResponse({ status: 400, description: 'Falta idToken.' })
+  @ApiResponse({ status: 401, description: 'idToken inválido o expirado.' })
+  async googleToken(@Body() dto: GoogleTokenDto) {
+    return this.authService.loginWithGoogleToken(dto.idToken);
   }
 
   // ── JWT ───────────────────────────────────────────────

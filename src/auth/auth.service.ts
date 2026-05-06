@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
@@ -80,6 +81,37 @@ export class AuthService {
   async logout(userId: string): Promise<void> {
     await this.usersService.updateRefreshToken(userId, null);
     this.logger.info({ userId }, 'Sesión cerrada');
+  }
+
+  // ── Google Native Token ───────────────────────────────
+
+  async loginWithGoogleToken(idToken: string): Promise<AuthTokens> {
+    const clientId = this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID');
+    const client = new OAuth2Client(clientId);
+
+    let payload: import('google-auth-library').TokenPayload;
+    try {
+      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+      const p = ticket.getPayload();
+      if (!p) throw new Error('empty payload');
+      payload = p;
+    } catch {
+      throw new UnauthorizedException('idToken inválido o expirado');
+    }
+
+    if (!payload.email) {
+      throw new BadRequestException('El token no contiene email');
+    }
+
+    const user = await this.usersService.findOrCreate({
+      googleId: payload.sub,
+      email: payload.email,
+      name: payload.name ?? payload.email,
+      avatar: payload.picture,
+    });
+
+    this.logger.info({ userId: user.id }, 'Login nativo con Google exitoso');
+    return this.generateTokens(user);
   }
 
   // ── Dev Auth ─────────────────────────────────────────
