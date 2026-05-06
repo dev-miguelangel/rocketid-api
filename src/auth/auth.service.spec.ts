@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { getLoggerToken } from 'nestjs-pino';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -40,6 +41,7 @@ describe('AuthService', () => {
         { provide: ConfigService, useValue: configService },
         { provide: JwtService, useValue: jwtService },
         { provide: UsersService, useValue: usersService },
+        { provide: getLoggerToken(AuthService.name), useValue: { warn: jest.fn(), info: jest.fn() } },
       ],
     }).compile();
 

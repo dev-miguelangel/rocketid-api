@@ -7,6 +7,7 @@ import {
   HttpCode,
   NotFoundException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -21,6 +22,7 @@ interface JwtUser {
   name: string;
 }
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -33,12 +35,15 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Iniciar login con Google', description: 'Redirige al flujo OAuth2 de Google.' })
+  @ApiResponse({ status: 302, description: 'Redirección a Google.' })
   googleLogin() {
     // Passport redirects automatically to Google
   }
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
+  @ApiExcludeEndpoint()
   googleCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const token = this.authService.generateToken(user);
@@ -56,6 +61,11 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
+  @ApiBearerAuth('jwt')
+  @ApiOperation({ summary: 'Perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Datos del usuario.' })
+  @ApiResponse({ status: 401, description: 'Token inválido o expirado.' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado.' })
   async getMe(@Req() req: Request) {
     const { id } = req.user as JwtUser;
     const user = await this.usersService.findById(id);
@@ -66,6 +76,8 @@ export class AuthController {
 
   @Get('logout')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Cerrar sesión' })
+  @ApiResponse({ status: 200, description: 'Sesión cerrada.' })
   logout() {
     return { message: 'Sesión cerrada' };
   }
