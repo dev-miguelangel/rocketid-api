@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { Profile } from '../../profiles/entities/profile.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -32,6 +33,9 @@ export class User {
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status!: UserStatus;
+
+  @OneToOne(() => Profile, (profile) => profile.user)
+  profile?: Profile;
 
   @CreateDateColumn()
   createdAt!: Date;
