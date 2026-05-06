@@ -29,7 +29,11 @@ Editar `.env` y completar las variables requeridas:
 | `JWT_EXPIRES_IN` | Expiración del token (ej. `7d`) |
 | `GOOGLE_CLIENT_ID` | Client ID de Google OAuth2 |
 | `GOOGLE_CLIENT_SECRET` | Client Secret de Google OAuth2 |
-| `GOOGLE_CALLBACK_URL` | URL de callback (ej. `http://localhost:3000/auth/google/callback`) |
+| `GOOGLE_CALLBACK_URL` | URL de callback — debe coincidir con la registrada en Google Cloud Console |
+
+En Google Cloud Console, dentro de **Credenciales → OAuth 2.0 → URIs de redireccionamiento autorizados**, agrega la URL del callback:
+
+![URIs de redireccionamiento autorizados en Google Cloud Console](assets/google-callback-uri.png)
 | `FRONTEND_URL` | URL del frontend al que redirigir tras login (ej. `http://localhost:4200`) |
 | `DEV_AUTH_ENABLED` | Habilita login de desarrollo sin Google (`true` / `false`) |
 | `DEV_AUTH_EMAIL` | Email del usuario de desarrollo |
@@ -42,7 +46,13 @@ Editar `.env` y completar las variables requeridas:
 docker compose up
 ```
 
-Esto inicia PostgreSQL y la app NestJS con hot-reload. La API queda disponible en `http://localhost:3000`.
+Esto inicia PostgreSQL, la app NestJS con hot-reload y Adminer (cliente web de base de datos).
+
+| Servicio | URL |
+|---|---|
+| API | `http://localhost:3000` |
+| Swagger | `http://localhost:3000/api/docs` |
+| Adminer | `http://localhost:8080` |
 
 Para correr en segundo plano:
 
@@ -67,6 +77,22 @@ Para eliminar también el volumen de la base de datos:
 ```bash
 docker compose down -v
 ```
+
+## Cliente de base de datos (Adminer)
+
+Adminer es una interfaz web para explorar y consultar la base de datos PostgreSQL.
+
+Accede en `http://localhost:8080` y usa estos datos de conexión:
+
+| Campo | Valor |
+|---|---|
+| Sistema | `PostgreSQL` |
+| Servidor | `postgres` |
+| Usuario | valor de `DB_USER` en `.env` |
+| Contraseña | valor de `DB_PASSWORD` en `.env` |
+| Base de datos | valor de `DB_NAME` en `.env` |
+
+> El campo **Servidor** debe ser `postgres` (nombre del servicio Docker), no `localhost`.
 
 ## Endpoints de autenticación
 
