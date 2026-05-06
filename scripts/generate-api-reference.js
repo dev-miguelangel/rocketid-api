@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SRC = path.resolve(__dirname, '../src');
-const OUT = path.resolve(__dirname, '../references_api.md');
+const OUT = path.resolve(__dirname, '../docs/references_api.md');
 const BASE_URL = 'http://localhost:3000';
 
 // ── file helpers ──────────────────────────────────────────────────────────────
