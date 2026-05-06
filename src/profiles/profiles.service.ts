@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -71,6 +72,23 @@ export class ProfilesService {
     return profile;
   }
 
+  async search(query: string): Promise<Profile> {
+    if (!query?.trim()) throw new BadRequestException('El parámetro q es requerido');
+
+    const normalized = query.replace(/^@/, '');
+
+    const profile = await this.profileRepository
+      .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.user', 'user')
+      .where('profile.alias = :alias', { alias: normalized.toLowerCase() })
+      .orWhere('profile.stringId = :stringId', { stringId: normalized.toUpperCase() })
+      .orWhere('user.email = :email', { email: normalized.toLowerCase() })
+      .getOne();
+
+    if (!profile) throw new NotFoundException('No se encontró ningún perfil');
+    return profile;
+  }
+
   async findByAlias(alias: string): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
       where: { alias: alias.toLowerCase() },
@@ -115,16 +133,16 @@ export class ProfilesService {
     await this.profileRepository.remove(profile);
   }
 
-  async addContact(userId: string, contactAlias: string): Promise<Profile> {
-    const alias = contactAlias.replace(/^@/, '').toLowerCase();
+  async addContact(userId: string, contactStringId: string): Promise<Profile> {
+    const stringId = contactStringId.toUpperCase();
 
     const [ownerProfile, contactProfile] = await Promise.all([
       this.profileRepository.findOne({ where: { userId }, relations: ['contacts'] }),
-      this.profileRepository.findOneBy({ alias }),
+      this.profileRepository.findOneBy({ stringId }),
     ]);
 
     if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
-    if (!contactProfile) throw new NotFoundException('El alias no existe');
+    if (!contactProfile) throw new NotFoundException('El ID no existe');
     if (ownerProfile.id === contactProfile.id) {
       throw new ConflictException('No puedes agregarte a ti mismo');
     }

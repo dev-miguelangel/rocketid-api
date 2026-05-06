@@ -19,10 +19,11 @@
             "timeout": 120
           },
           {
-            "type": "command",
-            "command": "/Users/miguelangelgonzalezjaimen/2026/rocketid/rocketid-api/scripts/api-reference-hook.sh",
-            "statusMessage": "Actualizando references_api.md...",
-            "timeout": 15,
+            "type": "agent",
+            "if": "Edit(src/)|Write(src/)",
+            "prompt": "Un archivo fue modificado. Input del hook: $ARGUMENTS\n\n1. Parsea el JSON en $ARGUMENTS y extrae tool_input.file_path\n2. Si el archivo NO termina en .entity.ts ni en .enum.ts → termina sin hacer nada\n3. Lee todos los archivos que encuentres en src/ que terminen en .entity.ts o .enum.ts\n4. Con esa información genera el archivo docs/entities.md con este formato:\n\n---\n# Entities — RocketID\n> Actualizado automáticamente\n\n```json\n{\n  \"entities\": {\n    \"NombreEntidad\": {\n      \"table\": \"nombre_tabla\",\n      \"columns\": {\n        \"nombreColumna\": \"tipo (restricciones)\"\n      },\n      \"relations\": {\n        \"campo\": \"TipoRelación → EntidadTarget\"\n      }\n    }\n  },\n  \"enums\": {\n    \"NombreEnum\": [\"valor1\", \"valor2\"]\n  },\n  \"joinTables\": {\n    \"nombre_tabla\": {\n      \"columna1\": \"tipo → tabla_referenciada.columna\",\n      \"columna2\": \"tipo → tabla_referenciada.columna\"\n    }\n  }\n}\n```\n---\n\nReglas para columns:\n- @PrimaryGeneratedColumn('uuid') → \"uuid (PK)\"\n- @Column({ unique: true }) sin nullable → \"string (UNIQUE)\"\n- @Column({ nullable: true }) → \"tipo | null\"\n- @Column({ unique: true, nullable: true }) → \"tipo | null (UNIQUE)\"\n- @Column({ type: 'enum', enum: X }) → \"NombreEnum\" o \"NombreEnum | null\"\n- @Column({ type: 'simple-array' }) → \"string[]\"\n- @CreateDateColumn / @UpdateDateColumn → \"timestamp (auto)\"\n- FK columns (userId, etc.) → \"uuid (FK)\"\n\nReglas para relations:\n- @OneToOne con @JoinColumn → \"OneToOne → Target (owning)\"\n- @OneToOne sin @JoinColumn → \"OneToOne → Target (inverse)\"\n- @ManyToMany con @JoinTable → \"ManyToMany → Target (owning, via tabla_join)\"\n- @ManyToMany sin @JoinTable → \"ManyToMany → Target (inverse)\"\n\nReglas para enums:\n- Para cada enum exportado incluir todos sus valores de string\n\nReglas para joinTables:\n- Solo las tablas con @JoinTable explícito y nombre definido\n\n5. Escribe el resultado en docs/entities.md\n6. No ejecutes tests ni modifiques archivos .ts",
+            "statusMessage": "Actualizando entities.md...",
+            "timeout": 30,
             "async": true
           }
         ]

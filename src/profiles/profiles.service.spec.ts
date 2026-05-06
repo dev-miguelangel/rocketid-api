@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,8 +9,12 @@ import { ProfilesService, RequestUser } from './profiles.service';
 const buildQb = () => ({
   innerJoin: jest.fn().mockReturnThis(),
   leftJoin: jest.fn().mockReturnThis(),
+  leftJoinAndSelect: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
+  orWhere: jest.fn().mockReturnThis(),
+  andWhere: jest.fn().mockReturnThis(),
   setParameter: jest.fn().mockReturnThis(),
+  getOne: jest.fn(),
   getMany: jest.fn(),
 });
 
@@ -120,6 +124,36 @@ describe('ProfilesService', () => {
     });
   });
 
+  // ── search ────────────────────────────────────────────────────────────────
+
+  describe('search', () => {
+    it('throws BadRequestException when query is empty', async () => {
+      await expect(service.search('')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws NotFoundException when no profile matches', async () => {
+      const qb = buildQb();
+      qb.getOne.mockResolvedValue(null);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      await expect(service.search('ghost')).rejects.toThrow(NotFoundException);
+    });
+
+    it('strips @ and builds OR query by alias, stringId and email', async () => {
+      const profile = { id: 'p-1', alias: 'myalias' } as Profile;
+      const qb = buildQb();
+      qb.getOne.mockResolvedValue(profile);
+      repo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.search('@MyAlias');
+
+      expect(qb.where).toHaveBeenCalledWith('profile.alias = :alias', { alias: 'myalias' });
+      expect(qb.orWhere).toHaveBeenCalledWith('profile.stringId = :stringId', { stringId: 'MYALIAS' });
+      expect(qb.orWhere).toHaveBeenCalledWith('user.email = :email', { email: 'myalias' });
+      expect(result).toBe(profile);
+    });
+  });
+
   // ── findByAlias ───────────────────────────────────────────────────────────
 
   describe('findByAlias', () => {
@@ -181,7 +215,7 @@ describe('ProfilesService', () => {
   // ── addContact ────────────────────────────────────────────────────────────
 
   describe('addContact', () => {
-    const contactProfile = { id: 'p-2', alias: 'friend' } as Profile;
+    const contactProfile = { id: 'p-2', stringId: 'ABC123' } as Profile;
     let ownerProfile: Profile;
 
     beforeEach(() => {
@@ -191,39 +225,39 @@ describe('ProfilesService', () => {
       repo.save.mockImplementation((p) => Promise.resolve(p as Profile));
     });
 
-    it('strips leading @ and lowercases alias before lookup', async () => {
-      await service.addContact('user-1', '@Friend');
+    it('uppercases stringId before lookup', async () => {
+      await service.addContact('user-1', 'abc123');
 
-      expect(repo.findOneBy).toHaveBeenCalledWith({ alias: 'friend' });
+      expect(repo.findOneBy).toHaveBeenCalledWith({ stringId: 'ABC123' });
     });
 
     it('throws NotFoundException when owner has no profile', async () => {
       repo.findOne.mockResolvedValue(null);
 
-      await expect(service.addContact('ghost', 'friend')).rejects.toThrow(NotFoundException);
+      await expect(service.addContact('ghost', 'ABC123')).rejects.toThrow(NotFoundException);
     });
 
-    it('throws NotFoundException when contact alias does not exist', async () => {
+    it('throws NotFoundException when stringId does not exist', async () => {
       repo.findOneBy.mockResolvedValue(null);
 
-      await expect(service.addContact('user-1', 'unknown')).rejects.toThrow(NotFoundException);
+      await expect(service.addContact('user-1', 'ZZZ999')).rejects.toThrow(NotFoundException);
     });
 
     it('throws ConflictException when adding self', async () => {
       repo.findOneBy.mockResolvedValue(ownerProfile);
 
-      await expect(service.addContact('user-1', 'myself')).rejects.toThrow(ConflictException);
+      await expect(service.addContact('user-1', 'ABC123')).rejects.toThrow(ConflictException);
     });
 
     it('throws ConflictException when contact is already added', async () => {
       const ownerWithContact = { ...ownerProfile, contacts: [contactProfile] } as unknown as Profile;
       repo.findOne.mockResolvedValue(ownerWithContact);
 
-      await expect(service.addContact('user-1', 'friend')).rejects.toThrow(ConflictException);
+      await expect(service.addContact('user-1', 'ABC123')).rejects.toThrow(ConflictException);
     });
 
     it('pushes contact and saves', async () => {
-      const result = await service.addContact('user-1', 'friend');
+      const result = await service.addContact('user-1', 'ABC123');
 
       expect(repo.save).toHaveBeenCalled();
       expect(result.contacts).toContain(contactProfile);

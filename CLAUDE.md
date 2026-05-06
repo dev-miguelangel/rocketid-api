@@ -25,6 +25,10 @@ All content visible to the **end user** must be in **Spanish**:
 - TypeORM + PostgreSQL
 - Jest for unit tests
 
+## Entity Conventions
+
+- Every entity must include `@CreateDateColumn() createdAt` and `@UpdateDateColumn() updatedAt`. TypeORM manages these automatically — never set them manually.
+
 ## Testing
 
 - Every `src/**/*.ts` file (except `main.ts`) must have a corresponding `src/**/*.spec.ts`

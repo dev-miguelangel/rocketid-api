@@ -28,13 +28,13 @@ describe('ContactsController', () => {
   });
 
   describe('addContact', () => {
-    it('delegates userId from JWT and alias param to service', async () => {
-      const profile = { id: 'p-2', alias: 'friend' } as Profile;
+    it('delegates userId from JWT and stringId param to service', async () => {
+      const profile = { id: 'p-2', stringId: 'ABC123' } as Profile;
       service.addContact.mockResolvedValue(profile);
 
-      const result = await controller.addContact('friend', authReq);
+      const result = await controller.addContact('ABC123', authReq);
 
-      expect(service.addContact).toHaveBeenCalledWith('user-1', 'friend');
+      expect(service.addContact).toHaveBeenCalledWith('user-1', 'ABC123');
       expect(result).toBe(profile);
     });
   });

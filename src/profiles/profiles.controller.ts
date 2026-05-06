@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -36,7 +37,12 @@ export class ProfilesController {
     return this.profilesService.findAll();
   }
 
-  // Static segment must come before :id to avoid route collision
+  // Static segments must come before :id to avoid route collision
+  @Get('search')
+  search(@Query('q') q: string) {
+    return this.profilesService.search(q);
+  }
+
   @Get('alias/:alias')
   findByAlias(@Param('alias') alias: string) {
     return this.profilesService.findByAlias(alias);

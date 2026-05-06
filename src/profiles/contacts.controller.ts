@@ -22,10 +22,10 @@ export class ContactsController {
     return this.profilesService.getContacts(req.user.id);
   }
 
-  @Post(':alias')
+  @Post(':stringId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  addContact(@Param('alias') alias: string, @Request() req: AuthenticatedRequest) {
-    return this.profilesService.addContact(req.user.id, alias);
+  addContact(@Param('stringId') stringId: string, @Request() req: AuthenticatedRequest) {
+    return this.profilesService.addContact(req.user.id, stringId);
   }
 }

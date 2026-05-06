@@ -7,6 +7,7 @@ import { ProfilesService, RequestUser } from './profiles.service';
 const mockService = () => ({
   create: jest.fn(),
   findAll: jest.fn(),
+  search: jest.fn(),
   findOne: jest.fn(),
   findByAlias: jest.fn(),
   update: jest.fn(),
@@ -57,6 +58,16 @@ describe('ProfilesController', () => {
     const result = await controller.findOne('p-1');
 
     expect(service.findOne).toHaveBeenCalledWith('p-1');
+    expect(result).toBe(profile);
+  });
+
+  it('search — delegates query param to service', async () => {
+    const profile = { id: 'p-1', alias: 'myalias' } as Profile;
+    service.search.mockResolvedValue(profile);
+
+    const result = await controller.search('myalias');
+
+    expect(service.search).toHaveBeenCalledWith('myalias');
     expect(result).toBe(profile);
   });
 
