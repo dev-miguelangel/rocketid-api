@@ -6,7 +6,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { Profile } from './entities/profile.entity';
 import { ProfilesService, RequestUser } from './profiles.service';
 
-const buildQb = () => ({
+const buildQb = (): any => ({
   innerJoin: jest.fn().mockReturnThis(),
   leftJoin: jest.fn().mockReturnThis(),
   leftJoinAndSelect: jest.fn().mockReturnThis(),

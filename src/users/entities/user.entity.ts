@@ -34,6 +34,9 @@ export class User {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status!: UserStatus;
 
+  @Column({ type: 'int', default: 0 })
+  onboardingStep!: number;
+
   @Column({ nullable: true, type: 'varchar' })
   refreshTokenHash!: string | null;
 
