@@ -34,6 +34,9 @@ export class User {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status!: UserStatus;
 
+  @Column({ nullable: true, type: 'varchar' })
+  refreshTokenHash!: string | null;
+
   @OneToOne(() => Profile, (profile) => profile.user)
   profile?: Profile;
 

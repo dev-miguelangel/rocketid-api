@@ -13,27 +13,35 @@ describe('AuthService', () => {
   let jwtService: Partial<JwtService>;
 
   beforeEach(async () => {
-    usersService = { findOrCreate: jest.fn() };
+    usersService = {
+      findOrCreate: jest.fn(),
+      findById: jest.fn(),
+      updateRefreshToken: jest.fn().mockResolvedValue(undefined),
+    };
     configService = {
-      get: jest.fn((key: string) => {
-        const config: Record<string, any> = {
+      get: jest.fn((key: string, fallback?: unknown) => {
+        const config: Record<string, unknown> = {
           NODE_ENV: 'development',
           DEV_AUTH_ENABLED: 'true',
           DEV_AUTH_EMAIL: 'dev@sportcard.dev',
           DEV_AUTH_PASSWORD: 'dev1234',
           DEV_AUTH_NAME: 'Dev User',
         };
-        return config[key];
+        return config[key] ?? fallback;
       }),
       getOrThrow: jest.fn((key: string) => {
-        const config: Record<string, any> = {
+        const config: Record<string, string> = {
           DEV_AUTH_EMAIL: 'dev@sportcard.dev',
           DEV_AUTH_PASSWORD: 'dev1234',
+          JWT_SECRET: 'test-secret',
         };
         return config[key];
       }),
     };
-    jwtService = { sign: jest.fn().mockReturnValue('mock-token') };
+    jwtService = {
+      sign: jest.fn().mockReturnValue('mock-token'),
+      verify: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,17 +60,49 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('generateToken', () => {
-    it('should generate a JWT token', () => {
+  describe('generateTokens', () => {
+    it('should return accessToken and refreshToken', async () => {
       const mockUser = { id: 'user-123', email: 'test@test.com', name: 'Test User', role: 'user' } as any;
-      const token = service.generateToken(mockUser);
-      expect(token).toBe('mock-token');
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: 'user-123',
-        email: 'test@test.com',
-        name: 'Test User',
-        role: 'user',
+      const tokens = await service.generateTokens(mockUser);
+      expect(tokens).toHaveProperty('accessToken', 'mock-token');
+      expect(tokens).toHaveProperty('refreshToken', 'mock-token');
+      expect(jwtService.sign).toHaveBeenCalledTimes(2);
+      expect(usersService.updateRefreshToken).toHaveBeenCalledWith('user-123', expect.any(String));
+    });
+  });
+
+  describe('verifyRefreshToken', () => {
+    it('should return payload when token is valid', () => {
+      (jwtService.verify as jest.Mock).mockReturnValue({ sub: 'user-123' });
+      const result = service.verifyRefreshToken('valid-token');
+      expect(result).toEqual({ sub: 'user-123' });
+    });
+
+    it('should throw UnauthorizedException when token is invalid', () => {
+      (jwtService.verify as jest.Mock).mockImplementation(() => { throw new Error('invalid'); });
+      expect(() => service.verifyRefreshToken('bad-token')).toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('refreshTokens', () => {
+    it('should throw UnauthorizedException when user has no stored hash', async () => {
+      (usersService.findById as jest.Mock).mockResolvedValue({ id: 'user-123', refreshTokenHash: null });
+      await expect(service.refreshTokens('user-123', 'any-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException when hash does not match', async () => {
+      (usersService.findById as jest.Mock).mockResolvedValue({
+        id: 'user-123',
+        refreshTokenHash: 'wrong-hash',
       });
+      await expect(service.refreshTokens('user-123', 'bad-token')).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('logout', () => {
+    it('should clear refresh token hash', async () => {
+      await service.logout('user-123');
+      expect(usersService.updateRefreshToken).toHaveBeenCalledWith('user-123', null);
     });
   });
 
@@ -89,7 +129,7 @@ describe('AuthService', () => {
       await expect(service.devLogin('wrong@test.com', 'wrong')).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should return token with valid dev credentials', async () => {
+    it('should return tokens with valid dev credentials', async () => {
       (configService.get as jest.Mock)
         .mockReturnValueOnce('development')
         .mockReturnValueOnce('true')
@@ -105,8 +145,9 @@ describe('AuthService', () => {
         role: 'user',
       });
 
-      const token = await service.devLogin('dev@sportcard.dev', 'dev1234');
-      expect(token).toBe('mock-token');
+      const tokens = await service.devLogin('dev@sportcard.dev', 'dev1234');
+      expect(tokens).toHaveProperty('accessToken');
+      expect(tokens).toHaveProperty('refreshToken');
       expect(usersService.findOrCreate).toHaveBeenCalledWith({
         googleId: 'dev-local-user',
         email: 'dev@sportcard.dev',

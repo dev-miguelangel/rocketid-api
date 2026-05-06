@@ -31,7 +31,6 @@ export class DevAuthController {
   @ApiResponse({ status: 401, description: 'Credenciales incorrectas.' })
   @ApiResponse({ status: 403, description: 'No disponible en producción.' })
   async devLogin(@Body() dto: DevLoginDto) {
-    const token = await this.authService.devLogin(dto.email, dto.password);
-    return { token };
+    return this.authService.devLogin(dto.email, dto.password);
   }
 }

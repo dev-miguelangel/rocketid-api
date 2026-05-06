@@ -25,6 +25,10 @@ export class UsersService {
     return this.userRepository.findOneBy({ email });
   }
 
+  async updateRefreshToken(id: string, hash: string | null): Promise<void> {
+    await this.userRepository.update(id, { refreshTokenHash: hash });
+  }
+
   async findOrCreate(input: FindOrCreateInput): Promise<User> {
     const existing = await this.userRepository.findOneBy({ googleId: input.googleId });
     if (existing) {

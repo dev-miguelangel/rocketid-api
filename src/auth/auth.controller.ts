@@ -1,13 +1,16 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Req,
   Res,
   UseGuards,
   HttpCode,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -15,6 +18,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 interface JwtUser {
   id: string;
@@ -44,16 +48,17 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiExcludeEndpoint()
-  googleCallback(@Req() req: Request, @Res() res: Response) {
+  async googleCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
-    const token = this.authService.generateToken(user);
+    const { accessToken, refreshToken } = await this.authService.generateTokens(user);
+
     const allowedOrigins = (this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:4200')
       .split(',')
       .map((u) => u.trim());
     const state = req.query.state as string;
     const frontendUrl = allowedOrigins.includes(state) ? state : allowedOrigins[0];
 
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+    res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
   }
 
   // ── JWT ───────────────────────────────────────────────
@@ -70,15 +75,31 @@ export class AuthController {
     const { id } = req.user as JwtUser;
     const user = await this.usersService.findById(id);
     if (!user) throw new NotFoundException('Usuario no encontrado');
-    const { googleId: _googleId, ...publicUser } = user;
+    const { googleId: _googleId, refreshTokenHash: _hash, ...publicUser } = user;
     return publicUser;
   }
 
-  @Get('logout')
+  @Post('refresh')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Cerrar sesión' })
+  @ApiOperation({ summary: 'Renovar tokens usando el refresh token' })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({ status: 200, description: 'Nuevos access token y refresh token.' })
+  @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado.' })
+  async refresh(@Body() dto: RefreshTokenDto) {
+    const { sub } = this.authService.verifyRefreshToken(dto.refreshToken);
+    return this.authService.refreshTokens(sub, dto.refreshToken);
+  }
+
+  @Get('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  @ApiBearerAuth('jwt')
+  @ApiOperation({ summary: 'Cerrar sesión e invalidar refresh token' })
   @ApiResponse({ status: 200, description: 'Sesión cerrada.' })
-  logout() {
+  @ApiResponse({ status: 401, description: 'Token inválido o expirado.' })
+  async logout(@Req() req: Request) {
+    const { id } = req.user as JwtUser;
+    await this.authService.logout(id);
     return { message: 'Sesión cerrada' };
   }
 }

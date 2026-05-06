@@ -12,6 +12,7 @@ const mockUser: User = {
   avatar: null,
   role: UserRole.USER,
   status: UserStatus.ACTIVE,
+  refreshTokenHash: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
