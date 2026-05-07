@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Injectable, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -86,47 +86,29 @@ export class AuthService {
   // ── Google Native Token ───────────────────────────────
 
   async loginWithGoogleToken(idToken: string): Promise<AuthTokens> {
-    this.logger.debug({ hasIdToken: !!idToken, tokenLength: idToken?.length }, 'Iniciando loginWithGoogleToken');
-
     const clientId = this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID');
-    this.logger.debug({ clientId }, 'Google Client ID cargado');
-
     const client = new OAuth2Client(clientId);
 
     let payload: import('google-auth-library').TokenPayload;
     try {
-      this.logger.debug('Verificando idToken con Google...');
       const ticket = await client.verifyIdToken({ idToken, audience: clientId });
       const p = ticket.getPayload();
       if (!p) throw new Error('empty payload');
       payload = p;
-      this.logger.debug({
-        email: payload.email,
-        sub: payload.sub,
-        name: payload.name,
-      }, 'Token verificado exitosamente');
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      const errorStack = err instanceof Error ? err.stack : undefined;
-      this.logger.error(
-        { error: errorMessage, stack: errorStack },
-        'Error al verificar idToken',
-      );
+    } catch {
       throw new UnauthorizedException('idToken inválido o expirado');
     }
 
-    if (!payload.email) {
-      throw new BadRequestException('El token no contiene email');
+    if (!payload.email || !payload.email_verified) {
+      throw new UnauthorizedException('La cuenta de Google no tiene el email verificado');
     }
 
-    this.logger.debug({ email: payload.email }, 'Buscando o creando usuario...');
     const user = await this.usersService.findOrCreate({
       googleId: payload.sub,
       email: payload.email,
       name: payload.name ?? payload.email,
       avatar: payload.picture,
     });
-    this.logger.debug({ userId: user.id, email: user.email }, 'Usuario encontrado/creado');
 
     this.logger.info({ userId: user.id }, 'Login nativo con Google exitoso');
     return this.generateTokens(user);

@@ -30,11 +30,14 @@ export class UsersService {
   }
 
   async findOrCreate(input: FindOrCreateInput): Promise<User> {
-    const existing = await this.userRepository.findOneBy({ googleId: input.googleId });
-    if (existing) {
-      return existing;
-    }
-    const user = this.userRepository.create(input);
-    return this.userRepository.save(user);
+    // INSERT ... ON CONFLICT DO NOTHING to handle concurrent requests for the same user
+    await this.userRepository
+      .createQueryBuilder()
+      .insert()
+      .into(User)
+      .values(input)
+      .orIgnore()
+      .execute();
+    return this.userRepository.findOneByOrFail({ googleId: input.googleId });
   }
 }
