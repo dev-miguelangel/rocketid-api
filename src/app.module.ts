@@ -23,7 +23,6 @@ import { UsersModule } from './users/users.module';
         return {
           pinoHttp: {
             level: isDev ? 'debug' : 'info',
-            transport: isDev ? { target: 'pino-pretty', options: { singleLine: true } } : undefined,
             redact: ['req.headers.authorization'],
             serializers: {
               req: (req) => ({ method: req.method, url: req.url }),
