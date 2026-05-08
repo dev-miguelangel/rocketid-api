@@ -1,16 +1,23 @@
 import { createHash } from 'crypto';
 import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { User } from '../users/entities/user.entity';
+import { Profile } from '../profiles/entities/profile.entity';
 import { UsersService } from '../users/users.service';
 import { JwtPayload } from './strategies/jwt.strategy';
 
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface AuthResponse extends AuthTokens {
+  user: Omit<User, 'googleId' | 'refreshTokenHash'>;
 }
 
 @Injectable()
@@ -85,7 +92,7 @@ export class AuthService {
 
   // ── Google Native Token ───────────────────────────────
 
-  async loginWithGoogleToken(idToken: string): Promise<AuthTokens> {
+  async loginWithGoogleToken(idToken: string): Promise<AuthResponse> {
     const clientId = this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID');
     const client = new OAuth2Client(clientId);
 
@@ -111,7 +118,11 @@ export class AuthService {
     });
 
     this.logger.info({ userId: user.id }, 'Login nativo con Google exitoso');
-    return this.generateTokens(user);
+
+    const tokens = await this.generateTokens(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { googleId: _googleId, refreshTokenHash: _hash, ...publicUser } = user;
+    return { ...tokens, user: publicUser };
   }
 
   // ── Dev Auth ─────────────────────────────────────────

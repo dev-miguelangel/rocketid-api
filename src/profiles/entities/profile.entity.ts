@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { BloodType } from '../enums/blood-type.enum';
+import { Gender } from '../../users/enums/gender.enum';
 
 @Entity('profiles')
 export class Profile {
@@ -23,6 +24,15 @@ export class Profile {
 
   @Column()
   userId!: string;
+
+  @Column({ nullable: true, type: 'date' })
+  birthDate!: string | null;
+
+  @Column({ type: 'enum', enum: Gender, nullable: true })
+  gender!: Gender | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  city!: string | null;
 
   @Column({ nullable: true, type: 'varchar' })
   phone!: string | null;
