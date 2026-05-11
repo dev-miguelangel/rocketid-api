@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsDateString,
   IsEnum,
   IsOptional,
   IsString,
@@ -9,8 +10,25 @@ import {
   MinLength,
 } from 'class-validator';
 import { BloodType } from '../enums/blood-type.enum';
+import { Gender } from '../../users/enums/gender.enum';
 
 export class UpdateProfileDto {
+  @ApiPropertyOptional({ example: '1995-03-15' })
+  @IsOptional()
+  @IsDateString()
+  birthDate?: string;
+
+  @ApiPropertyOptional({ enum: Gender, example: Gender.MALE })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+
+  @ApiPropertyOptional({ example: 'Santiago' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
   @ApiPropertyOptional({ example: '+56912345678' })
   @IsOptional()
   @IsString()
