@@ -125,8 +125,24 @@ export class ProfilesService {
       profile.alias = alias;
     }
 
-    if (dto.phone !== undefined) {
-      profile.phone = dto.phone;
+    const updatableFields: (keyof UpdateProfileDto)[] = [
+      'phone',
+      'birthDate',
+      'gender',
+      'city',
+      'bloodType',
+      'allergies',
+      'conditions',
+      'medications',
+      'emergencyContactName',
+      'emergencyContactPhone',
+      'emergencyContactRelationship',
+    ];
+
+    for (const field of updatableFields) {
+      if (dto[field] !== undefined) {
+        (profile as unknown as Record<string, unknown>)[field] = dto[field];
+      }
     }
 
     return this.profileRepository.save(profile);
