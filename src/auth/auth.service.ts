@@ -1,5 +1,9 @@
 import { createHash } from 'crypto';
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OAuth2Client } from 'google-auth-library';
@@ -31,7 +35,12 @@ export class AuthService {
   ) {}
 
   private buildPayload(user: User): JwtPayload {
-    return { sub: user.id, email: user.email, name: user.name, role: user.role };
+    return {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
   }
 
   private hashToken(token: string): string {
@@ -54,23 +63,34 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
       { sub: user.id },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { secret: this.refreshSecret(), expiresIn: this.refreshExpiresIn() as any },
+
+      {
+        secret: this.refreshSecret(),
+        expiresIn: this.refreshExpiresIn() as any,
+      },
     );
 
-    await this.usersService.updateRefreshToken(user.id, this.hashToken(refreshToken));
+    await this.usersService.updateRefreshToken(
+      user.id,
+      this.hashToken(refreshToken),
+    );
     return { accessToken, refreshToken };
   }
 
   verifyRefreshToken(token: string): { sub: string } {
     try {
-      return this.jwtService.verify(token, { secret: this.refreshSecret() }) as { sub: string };
+      return this.jwtService.verify(token, {
+        secret: this.refreshSecret(),
+      });
     } catch {
       throw new UnauthorizedException('Refresh token inválido o expirado');
     }
   }
 
-  async refreshTokens(userId: string, refreshToken: string): Promise<AuthTokens> {
+  async refreshTokens(
+    userId: string,
+    refreshToken: string,
+  ): Promise<AuthTokens> {
     const user = await this.usersService.findById(userId);
     if (!user || !user.refreshTokenHash) {
       throw new UnauthorizedException('Sesión inválida');
@@ -98,7 +118,10 @@ export class AuthService {
 
     let payload: import('google-auth-library').TokenPayload;
     try {
-      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: clientId,
+      });
       const p = ticket.getPayload();
       if (!p) throw new Error('empty payload');
       payload = p;
@@ -107,7 +130,9 @@ export class AuthService {
     }
 
     if (!payload.email || !payload.email_verified) {
-      throw new UnauthorizedException('La cuenta de Google no tiene el email verificado');
+      throw new UnauthorizedException(
+        'La cuenta de Google no tiene el email verificado',
+      );
     }
 
     const user = await this.usersService.findOrCreate({
@@ -120,8 +145,12 @@ export class AuthService {
     this.logger.info({ userId: user.id }, 'Login nativo con Google exitoso');
 
     const tokens = await this.generateTokens(user);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { googleId: _googleId, refreshTokenHash: _hash, ...publicUser } = user;
+
+    const {
+      googleId: _googleId,
+      refreshTokenHash: _hash,
+      ...publicUser
+    } = user;
     return { ...tokens, user: publicUser };
   }
 
@@ -137,10 +166,14 @@ export class AuthService {
     }
 
     const devEmail = this.configService.getOrThrow<string>('DEV_AUTH_EMAIL');
-    const devPassword = this.configService.getOrThrow<string>('DEV_AUTH_PASSWORD');
+    const devPassword =
+      this.configService.getOrThrow<string>('DEV_AUTH_PASSWORD');
 
     if (email !== devEmail || password !== devPassword) {
-      this.logger.warn({ email }, 'Intento de dev-login con credenciales incorrectas');
+      this.logger.warn(
+        { email },
+        'Intento de dev-login con credenciales incorrectas',
+      );
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 

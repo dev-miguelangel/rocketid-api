@@ -30,6 +30,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user || user.status === UserStatus.BLOCKED) {
       throw new UnauthorizedException('Usuario bloqueado o no encontrado');
     }
-    return { id: payload.sub, email: payload.email, name: payload.name, role: user.role };
+    return {
+      id: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      role: user.role,
+    };
   }
 }

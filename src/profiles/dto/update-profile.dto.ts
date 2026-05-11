@@ -44,7 +44,10 @@ export class UpdateProfileDto {
   @IsString()
   conditions?: string;
 
-  @ApiPropertyOptional({ type: [String], example: ['Metformina 850mg', 'Losartán 50mg'] })
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Metformina 850mg', 'Losartán 50mg'],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

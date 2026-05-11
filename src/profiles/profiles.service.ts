@@ -35,7 +35,7 @@ export class ProfilesService {
 
     const [existingAlias, existingProfile] = await Promise.all([
       this.profileRepository.findOneBy({ alias }),
-      this.profileRepository.findOneBy({ userId }),
+      this.profileRepository.findOneBy({ user: { id: userId } }),
     ]);
 
     if (existingAlias) {
@@ -48,7 +48,7 @@ export class ProfilesService {
     const stringId = await this.generateUniqueStringId();
 
     const profile = this.profileRepository.create({
-      userId,
+      user: { id: userId },
       phone: dto.phone ?? null,
       alias,
       stringId,
@@ -73,7 +73,8 @@ export class ProfilesService {
   }
 
   async search(query: string): Promise<Profile> {
-    if (!query?.trim()) throw new BadRequestException('El parámetro q es requerido');
+    if (!query?.trim())
+      throw new BadRequestException('El parámetro q es requerido');
 
     const normalized = query.replace(/^@/, '');
 
@@ -81,7 +82,9 @@ export class ProfilesService {
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .where('profile.alias = :alias', { alias: normalized.toLowerCase() })
-      .orWhere('profile.stringId = :stringId', { stringId: normalized.toUpperCase() })
+      .orWhere('profile.stringId = :stringId', {
+        stringId: normalized.toUpperCase(),
+      })
       .orWhere('user.email = :email', { email: normalized.toLowerCase() })
       .getOne();
 
@@ -100,11 +103,17 @@ export class ProfilesService {
     return profile;
   }
 
-  async update(id: string, dto: UpdateProfileDto, requester: RequestUser): Promise<Profile> {
+  async update(
+    id: string,
+    dto: UpdateProfileDto,
+    requester: RequestUser,
+  ): Promise<Profile> {
     const profile = await this.findOne(id);
 
-    if (profile.userId !== requester.id && requester.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('No tienes permiso para modificar este perfil');
+    if (profile.user.id !== requester.id && requester.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        'No tienes permiso para modificar este perfil',
+      );
     }
 
     if (dto.alias !== undefined) {
@@ -126,8 +135,10 @@ export class ProfilesService {
   async remove(id: string, requester: RequestUser): Promise<void> {
     const profile = await this.findOne(id);
 
-    if (profile.userId !== requester.id && requester.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('No tienes permiso para eliminar este perfil');
+    if (profile.user.id !== requester.id && requester.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        'No tienes permiso para eliminar este perfil',
+      );
     }
 
     await this.profileRepository.remove(profile);
@@ -137,7 +148,10 @@ export class ProfilesService {
     const stringId = contactStringId.toUpperCase();
 
     const [ownerProfile, contactProfile] = await Promise.all([
-      this.profileRepository.findOne({ where: { userId }, relations: ['contacts'] }),
+      this.profileRepository.findOne({
+        where: { user: { id: userId } },
+        relations: ['contacts'],
+      }),
       this.profileRepository.findOneBy({ stringId }),
     ]);
 
@@ -156,7 +170,7 @@ export class ProfilesService {
 
   async getContacts(userId: string): Promise<Profile[]> {
     const ownerProfile = await this.profileRepository.findOne({
-      where: { userId },
+      where: { user: { id: userId } },
       relations: ['contacts'],
     });
     if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
@@ -164,7 +178,9 @@ export class ProfilesService {
   }
 
   async getSuggestedContacts(userId: string): Promise<Profile[]> {
-    const ownerProfile = await this.profileRepository.findOneBy({ userId });
+    const ownerProfile = await this.profileRepository.findOneBy({
+      user: { id: userId },
+    });
     if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
 
     return this.profileRepository
@@ -187,7 +203,9 @@ export class ProfilesService {
   private async generateUniqueStringId(): Promise<string> {
     for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
       const candidate = this.buildStringId();
-      const exists = await this.profileRepository.findOneBy({ stringId: candidate });
+      const exists = await this.profileRepository.findOneBy({
+        stringId: candidate,
+      });
       if (!exists) return candidate;
     }
     throw new Error('No se pudo generar un stringId único');
@@ -196,10 +214,12 @@ export class ProfilesService {
   private buildStringId(): string {
     let result = '';
     for (let i = 0; i < 3; i++) {
-      result += STRING_ID_LETTERS[Math.floor(Math.random() * STRING_ID_LETTERS.length)];
+      result +=
+        STRING_ID_LETTERS[Math.floor(Math.random() * STRING_ID_LETTERS.length)];
     }
     for (let i = 0; i < 3; i++) {
-      result += STRING_ID_DIGITS[Math.floor(Math.random() * STRING_ID_DIGITS.length)];
+      result +=
+        STRING_ID_DIGITS[Math.floor(Math.random() * STRING_ID_DIGITS.length)];
     }
     return result;
   }

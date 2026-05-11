@@ -29,7 +29,10 @@ export class UsersController {
   @ApiBearerAuth('jwt')
   @ApiOperation({ summary: 'Actualizar datos de onboarding del usuario' })
   @ApiBody({ type: UpdateOnboardingDto })
-  async updateOnboarding(@Req() req: Request, @Body() dto: UpdateOnboardingDto) {
+  async updateOnboarding(
+    @Req() req: Request,
+    @Body() dto: UpdateOnboardingDto,
+  ) {
     const { id } = req.user as JwtUser;
     return this.usersService.updateOnboarding(id, dto);
   }

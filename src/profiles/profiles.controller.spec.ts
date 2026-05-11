@@ -14,7 +14,12 @@ const mockService = () => ({
   remove: jest.fn(),
 });
 
-const reqUser: RequestUser = { id: 'user-1', email: 'u@u.com', name: 'User', role: UserRole.USER };
+const reqUser: RequestUser = {
+  id: 'user-1',
+  email: 'u@u.com',
+  name: 'User',
+  role: UserRole.USER,
+};
 const authReq = { user: reqUser } as never;
 
 describe('ProfilesController', () => {
@@ -85,9 +90,17 @@ describe('ProfilesController', () => {
     const profile = { id: 'p-1', alias: 'updated' } as Profile;
     service.update.mockResolvedValue(profile);
 
-    const result = await controller.update('p-1', { alias: 'updated' }, authReq);
+    const result = await controller.update(
+      'p-1',
+      { alias: 'updated' },
+      authReq,
+    );
 
-    expect(service.update).toHaveBeenCalledWith('p-1', { alias: 'updated' }, reqUser);
+    expect(service.update).toHaveBeenCalledWith(
+      'p-1',
+      { alias: 'updated' },
+      reqUser,
+    );
     expect(result).toBe(profile);
   });
 

@@ -10,7 +10,12 @@ const mockService = () => ({
   getSuggestedContacts: jest.fn(),
 });
 
-const reqUser: RequestUser = { id: 'user-1', email: 'u@u.com', name: 'User', role: UserRole.USER };
+const reqUser: RequestUser = {
+  id: 'user-1',
+  email: 'u@u.com',
+  name: 'User',
+  role: UserRole.USER,
+};
 const authReq = { user: reqUser } as never;
 
 describe('ContactsController', () => {

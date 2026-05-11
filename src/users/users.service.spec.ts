@@ -112,7 +112,9 @@ describe('UsersService', () => {
       userRepo.findOneBy.mockResolvedValue(mockUser);
       const result = await service.findByEmail('test@test.com');
       expect(result).toEqual(mockUser);
-      expect(userRepo.findOneBy).toHaveBeenCalledWith({ email: 'test@test.com' });
+      expect(userRepo.findOneBy).toHaveBeenCalledWith({
+        email: 'test@test.com',
+      });
     });
   });
 
@@ -120,7 +122,11 @@ describe('UsersService', () => {
     it('should return existing user if found', async () => {
       userRepo.findOneBy.mockResolvedValue(mockUser);
       userRepo.findOneByOrFail.mockResolvedValue(mockUser);
-      const result = await service.findOrCreate({ googleId: 'google-123', email: 'test@test.com', name: 'Test User' });
+      const result = await service.findOrCreate({
+        googleId: 'google-123',
+        email: 'test@test.com',
+        name: 'Test User',
+      });
       expect(result).toEqual(mockUser);
       expect(userRepo.create).not.toHaveBeenCalled();
     });
@@ -139,7 +145,11 @@ describe('UsersService', () => {
       });
       userRepo.findOneByOrFail.mockResolvedValue(mockUser);
 
-      const input = { googleId: 'google-123', email: 'test@test.com', name: 'Test User' };
+      const input = {
+        googleId: 'google-123',
+        email: 'test@test.com',
+        name: 'Test User',
+      };
       const result = await service.findOrCreate(input);
       expect(result).toEqual(mockUser);
     });

@@ -6,8 +6,12 @@ export class InitialSchema1746576000000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
 
-    await queryRunner.query(`CREATE TYPE "public"."users_role_enum" AS ENUM('user', 'admin')`);
-    await queryRunner.query(`CREATE TYPE "public"."users_status_enum" AS ENUM('active', 'blocked')`);
+    await queryRunner.query(
+      `CREATE TYPE "public"."users_role_enum" AS ENUM('user', 'admin')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."users_status_enum" AS ENUM('active', 'blocked')`,
+    );
     await queryRunner.query(
       `CREATE TYPE "public"."profiles_blood_type_enum" AS ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'sin informacion')`,
     );
@@ -68,8 +72,12 @@ export class InitialSchema1746576000000 implements MigrationInterface {
       )
     `);
 
-    await queryRunner.query(`CREATE INDEX "IDX_profile_contacts_owner_id"   ON "profile_contacts" ("owner_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_profile_contacts_contact_id" ON "profile_contacts" ("contact_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_profile_contacts_owner_id"   ON "profile_contacts" ("owner_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_profile_contacts_contact_id" ON "profile_contacts" ("contact_id")`,
+    );
 
     await queryRunner.query(`
       ALTER TABLE "profile_contacts"
@@ -87,12 +95,22 @@ export class InitialSchema1746576000000 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "profile_contacts" DROP CONSTRAINT "FK_profile_contacts_contact_id"`);
-    await queryRunner.query(`ALTER TABLE "profile_contacts" DROP CONSTRAINT "FK_profile_contacts_owner_id"`);
-    await queryRunner.query(`DROP INDEX "public"."IDX_profile_contacts_contact_id"`);
-    await queryRunner.query(`DROP INDEX "public"."IDX_profile_contacts_owner_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "profile_contacts" DROP CONSTRAINT "FK_profile_contacts_contact_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "profile_contacts" DROP CONSTRAINT "FK_profile_contacts_owner_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_profile_contacts_contact_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_profile_contacts_owner_id"`,
+    );
     await queryRunner.query(`DROP TABLE "profile_contacts"`);
-    await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "FK_profiles_userId"`);
+    await queryRunner.query(
+      `ALTER TABLE "profiles" DROP CONSTRAINT "FK_profiles_userId"`,
+    );
     await queryRunner.query(`DROP TABLE "profiles"`);
     await queryRunner.query(`DROP TABLE "users"`);
     await queryRunner.query(`DROP TYPE "public"."profiles_blood_type_enum"`);

@@ -1,4 +1,13 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProfilesService, RequestUser } from './profiles.service';
 
@@ -25,7 +34,10 @@ export class ContactsController {
   @Post(':stringId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  addContact(@Param('stringId') stringId: string, @Request() req: AuthenticatedRequest) {
+  addContact(
+    @Param('stringId') stringId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.profilesService.addContact(req.user.id, stringId);
   }
 }

@@ -49,7 +49,10 @@ describe('AuthService', () => {
         { provide: ConfigService, useValue: configService },
         { provide: JwtService, useValue: jwtService },
         { provide: UsersService, useValue: usersService },
-        { provide: getLoggerToken(AuthService.name), useValue: { warn: jest.fn(), info: jest.fn() } },
+        {
+          provide: getLoggerToken(AuthService.name),
+          useValue: { warn: jest.fn(), info: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -62,12 +65,20 @@ describe('AuthService', () => {
 
   describe('generateTokens', () => {
     it('should return accessToken and refreshToken', async () => {
-      const mockUser = { id: 'user-123', email: 'test@test.com', name: 'Test User', role: 'user' } as any;
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@test.com',
+        name: 'Test User',
+        role: 'user',
+      } as any;
       const tokens = await service.generateTokens(mockUser);
       expect(tokens).toHaveProperty('accessToken', 'mock-token');
       expect(tokens).toHaveProperty('refreshToken', 'mock-token');
       expect(jwtService.sign).toHaveBeenCalledTimes(2);
-      expect(usersService.updateRefreshToken).toHaveBeenCalledWith('user-123', expect.any(String));
+      expect(usersService.updateRefreshToken).toHaveBeenCalledWith(
+        'user-123',
+        expect.any(String),
+      );
     });
   });
 
@@ -79,15 +90,24 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException when token is invalid', () => {
-      (jwtService.verify as jest.Mock).mockImplementation(() => { throw new Error('invalid'); });
-      expect(() => service.verifyRefreshToken('bad-token')).toThrow(UnauthorizedException);
+      (jwtService.verify as jest.Mock).mockImplementation(() => {
+        throw new Error('invalid');
+      });
+      expect(() => service.verifyRefreshToken('bad-token')).toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
   describe('refreshTokens', () => {
     it('should throw UnauthorizedException when user has no stored hash', async () => {
-      (usersService.findById as jest.Mock).mockResolvedValue({ id: 'user-123', refreshTokenHash: null });
-      await expect(service.refreshTokens('user-123', 'any-token')).rejects.toThrow(UnauthorizedException);
+      (usersService.findById as jest.Mock).mockResolvedValue({
+        id: 'user-123',
+        refreshTokenHash: null,
+      });
+      await expect(
+        service.refreshTokens('user-123', 'any-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when hash does not match', async () => {
@@ -95,28 +115,37 @@ describe('AuthService', () => {
         id: 'user-123',
         refreshTokenHash: 'wrong-hash',
       });
-      await expect(service.refreshTokens('user-123', 'bad-token')).rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens('user-123', 'bad-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('logout', () => {
     it('should clear refresh token hash', async () => {
       await service.logout('user-123');
-      expect(usersService.updateRefreshToken).toHaveBeenCalledWith('user-123', null);
+      expect(usersService.updateRefreshToken).toHaveBeenCalledWith(
+        'user-123',
+        null,
+      );
     });
   });
 
   describe('devLogin', () => {
     it('should throw ForbiddenException in production', async () => {
       (configService.get as jest.Mock).mockReturnValueOnce('production');
-      await expect(service.devLogin('dev@test.com', 'password')).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.devLogin('dev@test.com', 'password'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when DEV_AUTH_ENABLED is not true', async () => {
       (configService.get as jest.Mock)
         .mockReturnValueOnce('development')
         .mockReturnValueOnce(undefined);
-      await expect(service.devLogin('dev@test.com', 'password')).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.devLogin('dev@test.com', 'password'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw UnauthorizedException with invalid credentials', async () => {
@@ -126,7 +155,9 @@ describe('AuthService', () => {
       (configService.getOrThrow as jest.Mock)
         .mockReturnValueOnce('dev@sportcard.dev')
         .mockReturnValueOnce('dev1234');
-      await expect(service.devLogin('wrong@test.com', 'wrong')).rejects.toThrow(UnauthorizedException);
+      await expect(service.devLogin('wrong@test.com', 'wrong')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should return tokens with valid dev credentials', async () => {

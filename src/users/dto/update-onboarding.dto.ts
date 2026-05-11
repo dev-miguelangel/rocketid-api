@@ -46,7 +46,10 @@ export class UpdateOnboardingDto {
   @IsString()
   conditions?: string;
 
-  @ApiPropertyOptional({ type: [String], example: ['Metformina 850mg', 'Losartán 50mg'] })
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Metformina 850mg', 'Losartán 50mg'],
+  })
   @ValidateIf((o) => o.medications !== undefined)
   @IsArray()
   @IsString({ each: true })

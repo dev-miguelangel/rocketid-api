@@ -60,7 +60,9 @@ describe('JwtStrategy', () => {
 
     it('should throw UnauthorizedException when user not found', async () => {
       usersService.findById.mockResolvedValue(null);
-      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+      await expect(strategy.validate(payload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when user is blocked', async () => {
@@ -69,7 +71,9 @@ describe('JwtStrategy', () => {
         status: UserStatus.BLOCKED,
         role: UserRole.USER,
       } as any);
-      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+      await expect(strategy.validate(payload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

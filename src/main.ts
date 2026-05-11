@@ -15,7 +15,10 @@ async function bootstrap() {
       .setTitle('nest-google-api')
       .setDescription('API con autenticación Google OAuth2 y JWT')
       .setVersion('1.0')
-      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        'jwt',
+      )
       .addTag('auth', 'Autenticación y sesión')
       .build();
 

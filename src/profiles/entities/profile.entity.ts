@@ -22,9 +22,6 @@ export class Profile {
   @JoinColumn()
   user!: User;
 
-  @Column()
-  userId!: string;
-
   @Column({ nullable: true, type: 'date' })
   birthDate!: string | null;
 

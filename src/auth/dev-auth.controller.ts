@@ -15,7 +15,10 @@ export class DevAuthController {
   @Get('dev-credentials')
   @HttpCode(200)
   @ApiOperation({ summary: '[DEV] Credenciales de desarrollo' })
-  @ApiResponse({ status: 200, description: 'Email y contraseña del usuario dev.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email y contraseña del usuario dev.',
+  })
   devCredentials() {
     return {
       email: this.configService.get('DEV_AUTH_EMAIL', ''),

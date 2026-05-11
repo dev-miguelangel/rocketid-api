@@ -11,7 +11,11 @@ class PassthroughStateStore {
     callback(null, req.query?.origin ?? '');
   }
 
-  verify(req: any, _providedState: string, callback: (err: any, ok: boolean) => void): void {
+  verify(
+    req: any,
+    _providedState: string,
+    callback: (err: any, ok: boolean) => void,
+  ): void {
     callback(null, true);
   }
 }
@@ -28,7 +32,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       callbackURL: configService.getOrThrow<string>('GOOGLE_CALLBACK_URL'),
       scope: ['email', 'profile'],
       store: new PassthroughStateStore(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
   }
 

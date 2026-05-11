@@ -31,7 +31,8 @@ describe('GoogleStrategy', () => {
               const config: Record<string, string> = {
                 GOOGLE_CLIENT_ID: 'mock-client-id',
                 GOOGLE_CLIENT_SECRET: 'mock-client-secret',
-                GOOGLE_CALLBACK_URL: 'http://localhost:3000/auth/google/callback',
+                GOOGLE_CALLBACK_URL:
+                  'http://localhost:3000/auth/google/callback',
               };
               return config[key];
             }),

@@ -25,6 +25,13 @@ export class UsersService {
     return this.userRepository.findOneBy({ id });
   }
 
+  async findByIdWithProfile(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOneBy({ email });
   }
@@ -44,14 +51,17 @@ export class UsersService {
     return this.userRepository.findOneByOrFail({ googleId: input.googleId });
   }
 
-  async updateOnboarding(userId: string, dto: UpdateOnboardingDto): Promise<Profile> {
+  async updateOnboarding(
+    userId: string,
+    dto: UpdateOnboardingDto,
+  ): Promise<Profile> {
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
 
-    let profile = await this.profileRepository.findOne({
-      where: { userId },
+    const profile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
       relations: ['user'],
     });
 
@@ -74,7 +84,8 @@ export class UsersService {
     if (dto.emergencyContactPhone !== undefined)
       updateData.emergencyContactPhone = dto.emergencyContactPhone;
     if (dto.emergencyContactRelationship !== undefined)
-      updateData.emergencyContactRelationship = dto.emergencyContactRelationship;
+      updateData.emergencyContactRelationship =
+        dto.emergencyContactRelationship;
 
     await this.profileRepository.update(profile.id, updateData);
 
