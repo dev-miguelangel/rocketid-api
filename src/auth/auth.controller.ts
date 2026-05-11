@@ -120,8 +120,6 @@ async getMe(@Req() req: Request) {
     }
     return userData;
   }
-    return publicUser;
-  }
 
   @Post('refresh')
   @HttpCode(200)
