@@ -12,6 +12,10 @@ interface FindOrCreateInput {
   avatar?: string;
 }
 
+const STRING_ID_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const STRING_ID_DIGITS = '123456789';
+const MAX_GENERATION_ATTEMPTS = 10;
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -48,7 +52,55 @@ export class UsersService {
       .values(input)
       .orIgnore()
       .execute();
-    return this.userRepository.findOneByOrFail({ googleId: input.googleId });
+
+    const user = await this.userRepository.findOneByOrFail({
+      googleId: input.googleId,
+    });
+
+    const existingProfile = await this.profileRepository.findOneBy({
+      user: { id: user.id },
+    });
+
+    if (!existingProfile) {
+      const stringId = await this.generateUniqueStringId();
+      const profile = this.profileRepository.create({
+        user: { id: user.id },
+        alias: stringId,
+        stringId,
+      });
+      await this.profileRepository.save(profile);
+    }
+
+    const userWithProfile = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['profile'],
+    });
+    if (!userWithProfile) {
+      throw new Error('Error al recuperar el usuario con perfil');
+    }
+    return userWithProfile;
+  }
+
+  private async generateUniqueStringId(): Promise<string> {
+    for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
+      const candidate = this.buildStringId();
+      const exists = await this.profileRepository.findOneBy({ stringId: candidate });
+      if (!exists) return candidate;
+    }
+    throw new Error('No se pudo generar un stringId único');
+  }
+
+  private buildStringId(): string {
+    let result = '';
+    for (let i = 0; i < 3; i++) {
+      result +=
+        STRING_ID_LETTERS[Math.floor(Math.random() * STRING_ID_LETTERS.length)];
+    }
+    for (let i = 0; i < 3; i++) {
+      result +=
+        STRING_ID_DIGITS[Math.floor(Math.random() * STRING_ID_DIGITS.length)];
+    }
+    return result;
   }
 
   async updateOnboarding(

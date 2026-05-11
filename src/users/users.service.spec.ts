@@ -56,6 +56,7 @@ describe('UsersService', () => {
           useValue: {
             findOneBy: jest.fn(),
             findOneByOrFail: jest.fn(),
+            findOne: jest.fn(),
             create: jest.fn(),
             save: jest.fn(),
             update: jest.fn(),
@@ -77,6 +78,9 @@ describe('UsersService', () => {
           useValue: {
             findOne: jest.fn(),
             findOneBy: jest.fn(),
+            findOneByOrFail: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
             update: jest.fn(),
           },
         },
@@ -119,19 +123,22 @@ describe('UsersService', () => {
   });
 
   describe('findOrCreate', () => {
-    it('should return existing user if found', async () => {
+    it('should return existing user with profile if found', async () => {
       userRepo.findOneBy.mockResolvedValue(mockUser);
       userRepo.findOneByOrFail.mockResolvedValue(mockUser);
+      profileRepo.findOneBy.mockResolvedValue(mockProfile);
+      userRepo.findOne.mockResolvedValue({ ...mockUser, profile: mockProfile });
+
       const result = await service.findOrCreate({
         googleId: 'google-123',
         email: 'test@test.com',
         name: 'Test User',
       });
-      expect(result).toEqual(mockUser);
-      expect(userRepo.create).not.toHaveBeenCalled();
+      expect(result).toEqual({ ...mockUser, profile: mockProfile });
+      expect(profileRepo.create).not.toHaveBeenCalled();
     });
 
-    it('should create and return new user if not found', async () => {
+    it('should create user and profile when user does not exist', async () => {
       userRepo.createQueryBuilder.mockReturnValue({
         insert: jest.fn().mockReturnValue({
           into: jest.fn().mockReturnValue({
@@ -144,6 +151,12 @@ describe('UsersService', () => {
         }),
       });
       userRepo.findOneByOrFail.mockResolvedValue(mockUser);
+      profileRepo.findOneBy.mockResolvedValue(null);
+      profileRepo.create.mockImplementation((data) => data);
+      profileRepo.save.mockImplementation((data) => ({ ...data, id: mockProfile.id }));
+
+      const createdProfile = { id: 'new-profile-id', ...mockProfile };
+      userRepo.findOne.mockResolvedValue({ ...mockUser, profile: createdProfile });
 
       const input = {
         googleId: 'google-123',
@@ -151,7 +164,14 @@ describe('UsersService', () => {
         name: 'Test User',
       };
       const result = await service.findOrCreate(input);
-      expect(result).toEqual(mockUser);
+
+      const createCall = profileRepo.create.mock.calls[0][0];
+      expect(result).toBeDefined();
+      expect(result.profile).toBeDefined();
+      expect(createCall.alias).toHaveLength(6);
+      expect(createCall.stringId).toHaveLength(6);
+      expect(createCall.alias).toBe(createCall.stringId);
+      expect(profileRepo.save).toHaveBeenCalled();
     });
   });
 });
