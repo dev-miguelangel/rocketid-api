@@ -41,7 +41,7 @@ describe('GroupsService', () => {
 
   describe('create', () => {
     it('throws NotFoundException when profile not found', async () => {
-      profileRepo.findOneBy.mockResolvedValue(null);
+      profileRepo.findOne.mockResolvedValue(null);
 
       await expect(
         service.create('user-1', { name: 'testgroup' }),
@@ -49,7 +49,7 @@ describe('GroupsService', () => {
     });
 
     it('throws ConflictException when group name already exists', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       groupRepo.findOne.mockResolvedValue({ id: 'g-1' } as ContactGroup);
 
       await expect(
@@ -58,7 +58,7 @@ describe('GroupsService', () => {
     });
 
     it('creates group with valid data', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       groupRepo.findOne.mockResolvedValue(null);
       groupRepo.create.mockReturnValue({ name: 'testgroup' } as ContactGroup);
       groupRepo.save.mockResolvedValue({ id: 'g-1', name: 'testgroup' } as ContactGroup);
@@ -71,7 +71,7 @@ describe('GroupsService', () => {
 
     it('creates group with contacts when provided', async () => {
       const ownerProfile = { id: 'p-1', contacts: [{ id: 'p-2' }, { id: 'p-3' }] } as Profile;
-      profileRepo.findOneBy.mockResolvedValue(ownerProfile);
+      profileRepo.findOne.mockResolvedValue(ownerProfile);
       groupRepo.findOne.mockResolvedValue(null);
       profileRepo.findOne.mockResolvedValue(ownerProfile);
       groupRepo.create.mockReturnValue({ name: 'testgroup', contacts: [] } as ContactGroup);
@@ -88,13 +88,13 @@ describe('GroupsService', () => {
 
   describe('findAll', () => {
     it('throws NotFoundException when profile not found', async () => {
-      profileRepo.findOneBy.mockResolvedValue(null);
+      profileRepo.findOne.mockResolvedValue(null);
 
       await expect(service.findAll('user-1')).rejects.toThrow(NotFoundException);
     });
 
     it('returns groups for user', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       const groups = [{ id: 'g-1' }, { id: 'g-2' }] as ContactGroup[];
       groupRepo.find.mockResolvedValue(groups);
 
@@ -106,7 +106,7 @@ describe('GroupsService', () => {
 
   describe('findOne', () => {
     it('throws NotFoundException when group not found', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       groupRepo.findOne.mockResolvedValue(null);
 
       await expect(service.findOne('user-1', 'g-1')).rejects.toThrow(
@@ -115,7 +115,7 @@ describe('GroupsService', () => {
     });
 
     it('returns group when found', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       const group = { id: 'g-1', name: 'testgroup' } as ContactGroup;
       groupRepo.findOne.mockResolvedValue(group);
 
@@ -128,7 +128,7 @@ describe('GroupsService', () => {
   describe('update', () => {
     it('throws ConflictException when updating to existing name', async () => {
       const ownerProfile = { id: 'p-1' } as Profile;
-      profileRepo.findOneBy.mockResolvedValue(ownerProfile);
+      profileRepo.findOne.mockResolvedValue(ownerProfile);
       const existingGroup = { id: 'g-1', owner: { id: 'p-1' }, name: 'existing' } as ContactGroup;
       groupRepo.findOne
         .mockResolvedValueOnce(existingGroup)
@@ -142,7 +142,7 @@ describe('GroupsService', () => {
 
   describe('remove', () => {
     it('removes group successfully', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       const group = { id: 'g-1', name: 'testgroup' } as ContactGroup;
       groupRepo.findOne.mockResolvedValue(group);
       groupRepo.remove.mockResolvedValue(group);
@@ -155,7 +155,7 @@ describe('GroupsService', () => {
 
   describe('addContacts', () => {
     it('throws NotFoundException for invalid contacts', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       const group = { id: 'g-1', contacts: [] } as ContactGroup;
       groupRepo.findOne.mockResolvedValue(group);
       profileRepo.findOne.mockResolvedValue({ id: 'p-1', contacts: [] } as Profile);
@@ -166,7 +166,7 @@ describe('GroupsService', () => {
     });
 
     it('adds valid contacts to group', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       const group = { id: 'g-1', contacts: [{ id: 'p-2' }] } as ContactGroup;
       groupRepo.findOne.mockResolvedValue(group);
       profileRepo.findOne.mockResolvedValue({
@@ -183,7 +183,7 @@ describe('GroupsService', () => {
 
   describe('removeContacts', () => {
     it('removes contacts from group', async () => {
-      profileRepo.findOneBy.mockResolvedValue({ id: 'p-1' } as Profile);
+      profileRepo.findOne.mockResolvedValue({ id: 'p-1' } as Profile);
       const group = {
         id: 'g-1',
         contacts: [{ id: 'p-2' }, { id: 'p-3' }],

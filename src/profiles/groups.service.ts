@@ -21,8 +21,8 @@ export class GroupsService {
   ) {}
 
   async create(userId: string, dto: CreateContactGroupDto): Promise<ContactGroup> {
-    const ownerProfile = await this.profileRepository.findOneBy({
-      user: { id: userId },
+    const ownerProfile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
     });
 
     if (!ownerProfile) {
@@ -57,8 +57,8 @@ export class GroupsService {
   }
 
   async findAll(userId: string): Promise<ContactGroup[]> {
-    const ownerProfile = await this.profileRepository.findOneBy({
-      user: { id: userId },
+    const ownerProfile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
     });
 
     if (!ownerProfile) {
@@ -73,8 +73,8 @@ export class GroupsService {
   }
 
   async findOne(userId: string, groupId: string): Promise<ContactGroup> {
-    const ownerProfile = await this.profileRepository.findOneBy({
-      user: { id: userId },
+    const ownerProfile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
     });
 
     if (!ownerProfile) {
