@@ -20,7 +20,7 @@ interface AuthenticatedRequest extends Request {
   user: RequestUser;
 }
 
-@Controller('profiles/groups')
+@Controller('profiles/contact-groups')
 @UseGuards(JwtAuthGuard)
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
