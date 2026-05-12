@@ -12,6 +12,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { BloodType } from '../enums/blood-type.enum';
 import { Gender } from '../../users/enums/gender.enum';
+import { ContactGroup } from './contact-group.entity';
 
 @Entity('profiles')
 export class Profile {
@@ -77,6 +78,9 @@ export class Profile {
 
   @ManyToMany(() => Profile, (profile) => profile.contacts)
   addedBy!: Profile[];
+
+  @ManyToMany(() => ContactGroup, (group) => group.contacts)
+  contactGroups!: ContactGroup[];
 
   @CreateDateColumn()
   createdAt!: Date;
