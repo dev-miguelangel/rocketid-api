@@ -10,7 +10,11 @@ import { GroupsService } from './groups.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Profile, ContactGroup])],
-  controllers: [ContactsController, ProfilesController, GroupsController],
+  // GroupsController y ContactsController van antes de ProfilesController:
+  // sus paths (`profiles/contact-groups`, `profiles/contacts`) deben matchear
+  // antes que el `@Get(':id')` de ProfilesController, que si no captura el
+  // segmento "contact-groups" y revienta al castearlo a uuid.
+  controllers: [ContactsController, GroupsController, ProfilesController],
   providers: [ProfilesService, GroupsService],
   exports: [ProfilesService],
 })
