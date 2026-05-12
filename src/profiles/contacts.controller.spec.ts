@@ -8,6 +8,7 @@ const mockService = () => ({
   addContact: jest.fn(),
   getContacts: jest.fn(),
   getSuggestedContacts: jest.fn(),
+  removeContact: jest.fn(),
 });
 
 const reqUser: RequestUser = {
@@ -65,6 +66,18 @@ describe('ContactsController', () => {
 
       expect(service.getSuggestedContacts).toHaveBeenCalledWith('user-1');
       expect(result).toBe(suggestions);
+    });
+  });
+
+  describe('removeContact', () => {
+    it('delegates userId from JWT and stringId param to service', async () => {
+      const profile = { id: 'p-2', stringId: 'ABC123' } as Profile;
+      service.removeContact.mockResolvedValue(profile);
+
+      const result = await controller.removeContact('ABC123', authReq);
+
+      expect(service.removeContact).toHaveBeenCalledWith('user-1', 'ABC123');
+      expect(result).toBe(profile);
     });
   });
 });

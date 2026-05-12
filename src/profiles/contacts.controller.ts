@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -39,5 +40,14 @@ export class ContactsController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.profilesService.addContact(req.user.id, stringId);
+  }
+
+  @Delete(':stringId')
+  @UseGuards(JwtAuthGuard)
+  removeContact(
+    @Param('stringId') stringId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.profilesService.removeContact(req.user.id, stringId);
   }
 }

@@ -193,6 +193,28 @@ export class ProfilesService {
     return ownerProfile.contacts;
   }
 
+  async removeContact(userId: string, contactStringId: string): Promise<Profile> {
+    const stringId = contactStringId.toUpperCase();
+
+    const ownerProfile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['contacts'],
+    });
+
+    if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
+
+    const contactIndex = ownerProfile.contacts.findIndex(
+      (c) => c.stringId === stringId,
+    );
+
+    if (contactIndex === -1) {
+      throw new NotFoundException('El contacto no está en tu lista');
+    }
+
+    ownerProfile.contacts.splice(contactIndex, 1);
+    return this.profileRepository.save(ownerProfile);
+  }
+
   async getSuggestedContacts(userId: string): Promise<Profile[]> {
     const ownerProfile = await this.profileRepository.findOneBy({
       user: { id: userId },
