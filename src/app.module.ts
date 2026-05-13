@@ -9,6 +9,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { SportsModule } from './sports/sports.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { AdminModule } from './admin/admin.module';
     ProfilesModule,
     SportsModule,
     AdminModule,
+    TeamsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
