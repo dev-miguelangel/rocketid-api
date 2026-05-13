@@ -353,7 +353,7 @@ describe('ProfilesService', () => {
       expect(repo.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { user: { id: 'user-1' } },
-          relations: ['contacts'],
+          relations: ['contacts', 'contacts.user'],
         }),
       );
       expect(result).toBe(contacts);

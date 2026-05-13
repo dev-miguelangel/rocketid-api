@@ -188,7 +188,7 @@ export class ProfilesService {
   async getContacts(userId: string): Promise<Profile[]> {
     const ownerProfile = await this.profileRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['contacts'],
+      relations: ['contacts', 'contacts.user'],
     });
     if (!ownerProfile) throw new NotFoundException('Perfil no encontrado');
     return ownerProfile.contacts;
@@ -227,6 +227,7 @@ export class ProfilesService {
 
     return this.profileRepository
       .createQueryBuilder('p')
+      .leftJoinAndSelect('p.user', 'user')
       .innerJoin(
         'profile_contacts',
         'pc_added',
