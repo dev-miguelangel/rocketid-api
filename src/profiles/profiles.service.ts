@@ -81,6 +81,7 @@ export class ProfilesService {
     const profile = await this.profileRepository
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
+      .addSelect('user.id')
       .where('profile.alias = :alias', { alias: normalized.toLowerCase() })
       .orWhere('profile.stringId = :stringId', {
         stringId: normalized.toUpperCase(),
