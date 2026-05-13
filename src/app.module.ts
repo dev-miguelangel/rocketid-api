@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { SportsModule } from './sports/sports.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -54,6 +55,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     ProfilesModule,
+    SportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

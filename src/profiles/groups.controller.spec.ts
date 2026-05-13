@@ -43,7 +43,9 @@ describe('GroupsController', () => {
 
       const result = await controller.create({ name: 'testgroup' }, authReq);
 
-      expect(service.create).toHaveBeenCalledWith('user-1', { name: 'testgroup' });
+      expect(service.create).toHaveBeenCalledWith('user-1', {
+        name: 'testgroup',
+      });
       expect(result).toBe(group);
     });
   });
@@ -77,9 +79,15 @@ describe('GroupsController', () => {
       const group = { id: 'g-1', name: 'updated' } as ContactGroup;
       service.update.mockResolvedValue(group);
 
-      const result = await controller.update('g-1', { name: 'updated' }, authReq);
+      const result = await controller.update(
+        'g-1',
+        { name: 'updated' },
+        authReq,
+      );
 
-      expect(service.update).toHaveBeenCalledWith('user-1', 'g-1', { name: 'updated' });
+      expect(service.update).toHaveBeenCalledWith('user-1', 'g-1', {
+        name: 'updated',
+      });
       expect(result).toBe(group);
     });
   });
@@ -99,9 +107,15 @@ describe('GroupsController', () => {
       const group = { id: 'g-1', contacts: [] } as ContactGroup;
       service.addContacts.mockResolvedValue(group);
 
-      const result = await controller.addContacts('g-1', { contactIds: ['p-2'] }, authReq);
+      const result = await controller.addContacts(
+        'g-1',
+        { contactIds: ['p-2'] },
+        authReq,
+      );
 
-      expect(service.addContacts).toHaveBeenCalledWith('user-1', 'g-1', ['p-2']);
+      expect(service.addContacts).toHaveBeenCalledWith('user-1', 'g-1', [
+        'p-2',
+      ]);
       expect(result).toBe(group);
     });
   });
@@ -111,9 +125,15 @@ describe('GroupsController', () => {
       const group = { id: 'g-1', contacts: [] } as ContactGroup;
       service.removeContacts.mockResolvedValue(group);
 
-      const result = await controller.removeContacts('g-1', { contactIds: ['p-2'] }, authReq);
+      const result = await controller.removeContacts(
+        'g-1',
+        { contactIds: ['p-2'] },
+        authReq,
+      );
 
-      expect(service.removeContacts).toHaveBeenCalledWith('user-1', 'g-1', ['p-2']);
+      expect(service.removeContacts).toHaveBeenCalledWith('user-1', 'g-1', [
+        'p-2',
+      ]);
       expect(result).toBe(group);
     });
   });

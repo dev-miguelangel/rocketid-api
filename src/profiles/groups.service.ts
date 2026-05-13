@@ -20,7 +20,10 @@ export class GroupsService {
     private readonly profileRepository: Repository<Profile>,
   ) {}
 
-  async create(userId: string, dto: CreateContactGroupDto): Promise<ContactGroup> {
+  async create(
+    userId: string,
+    dto: CreateContactGroupDto,
+  ): Promise<ContactGroup> {
     const ownerProfile = await this.profileRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -159,9 +162,7 @@ export class GroupsService {
   ): Promise<ContactGroup> {
     const group = await this.findOne(userId, groupId);
 
-    group.contacts = group.contacts.filter(
-      (c) => !contactIds.includes(c.id),
-    );
+    group.contacts = group.contacts.filter((c) => !contactIds.includes(c.id));
 
     return this.groupRepository.save(group);
   }

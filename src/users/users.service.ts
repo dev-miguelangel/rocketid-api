@@ -84,7 +84,9 @@ export class UsersService {
   private async generateUniqueStringId(): Promise<string> {
     for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
       const candidate = this.buildStringId();
-      const exists = await this.profileRepository.findOneBy({ stringId: candidate });
+      const exists = await this.profileRepository.findOneBy({
+        stringId: candidate,
+      });
       if (!exists) return candidate;
     }
     throw new Error('No se pudo generar un stringId único');

@@ -193,7 +193,10 @@ export class ProfilesService {
     return ownerProfile.contacts;
   }
 
-  async removeContact(userId: string, contactStringId: string): Promise<Profile> {
+  async removeContact(
+    userId: string,
+    contactStringId: string,
+  ): Promise<Profile> {
     const stringId = contactStringId.toUpperCase();
 
     const ownerProfile = await this.profileRepository.findOne({

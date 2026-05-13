@@ -153,10 +153,16 @@ describe('UsersService', () => {
       userRepo.findOneByOrFail.mockResolvedValue(mockUser);
       profileRepo.findOneBy.mockResolvedValue(null);
       profileRepo.create.mockImplementation((data) => data);
-      profileRepo.save.mockImplementation((data) => ({ ...data, id: mockProfile.id }));
+      profileRepo.save.mockImplementation((data) => ({
+        ...data,
+        id: mockProfile.id,
+      }));
 
       const createdProfile = { id: 'new-profile-id', ...mockProfile };
-      userRepo.findOne.mockResolvedValue({ ...mockUser, profile: createdProfile });
+      userRepo.findOne.mockResolvedValue({
+        ...mockUser,
+        profile: createdProfile,
+      });
 
       const input = {
         googleId: 'google-123',

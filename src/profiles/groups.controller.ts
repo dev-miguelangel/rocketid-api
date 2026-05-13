@@ -39,10 +39,7 @@ export class GroupsController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id') id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.groupsService.findOne(req.user.id, id);
   }
 
@@ -56,10 +53,7 @@ export class GroupsController {
   }
 
   @Delete(':id')
-  remove(
-    @Param('id') id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.groupsService.remove(req.user.id, id);
   }
 

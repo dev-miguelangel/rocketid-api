@@ -109,11 +109,12 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Datos del usuario.' })
   @ApiResponse({ status: 401, description: 'Token inválido o expirado.' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado.' })
-async getMe(@Req() req: Request) {
+  async getMe(@Req() req: Request) {
     const { id } = req.user as JwtUser;
     const user = await this.usersService.findByIdWithProfile(id);
     if (!user) throw new NotFoundException('Usuario no encontrado');
-    const { googleId, refreshTokenHash, profile, ...userData } = user as User & { profile?: Profile };
+    const { googleId, refreshTokenHash, profile, ...userData } =
+      user as User & { profile?: Profile };
     if (profile) {
       const { contacts, addedBy, ...profileData } = profile;
       return { ...userData, profile: profileData };
