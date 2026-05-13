@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { SportsModule } from './sports/sports.module';
 import { UsersModule } from './users/users.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ProfilesModule,
     SportsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
