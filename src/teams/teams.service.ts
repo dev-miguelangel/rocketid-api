@@ -83,11 +83,7 @@ export class TeamsService {
     return team;
   }
 
-  async update(
-    id: string,
-    userId: string,
-    dto: UpdateTeamDto,
-  ): Promise<Team> {
+  async update(id: string, userId: string, dto: UpdateTeamDto): Promise<Team> {
     const team = await this.findById(id);
     await this.checkCanManage(userId, team);
 
@@ -103,7 +99,9 @@ export class TeamsService {
     const team = await this.findById(id);
 
     if (team.ownerId !== userId) {
-      throw new ForbiddenException('Solo el propietario puede eliminar el equipo');
+      throw new ForbiddenException(
+        'Solo el propietario puede eliminar el equipo',
+      );
     }
 
     await this.teamRepository.remove(team);
@@ -166,7 +164,9 @@ export class TeamsService {
     }
 
     if (member.role === TeamRole.OWNER) {
-      throw new BadRequestException('No puedes eliminar al propietario del equipo');
+      throw new BadRequestException(
+        'No puedes eliminar al propietario del equipo',
+      );
     }
 
     await this.memberRepository.remove(member);
@@ -235,13 +235,18 @@ export class TeamsService {
     }
 
     if (member.role === TeamRole.OWNER) {
-      throw new BadRequestException('El propietario no puede abandonar el equipo. Elimínalo si deseas.');
+      throw new BadRequestException(
+        'El propietario no puede abandonar el equipo. Elimínalo si deseas.',
+      );
     }
 
     await this.memberRepository.remove(member);
   }
 
-  async getPendingRequests(teamId: string, userId: string): Promise<TeamMember[]> {
+  async getPendingRequests(
+    teamId: string,
+    userId: string,
+  ): Promise<TeamMember[]> {
     const team = await this.findById(teamId);
     await this.checkCanManage(userId, team);
 
@@ -290,8 +295,13 @@ export class TeamsService {
       where: { teamId: team.id, userId, status: MemberStatus.ACTIVE },
     });
 
-    if (!member || (member.role !== TeamRole.OWNER && member.role !== TeamRole.CAPTAIN)) {
-      throw new ForbiddenException('No tienes permisos para gestionar este equipo');
+    if (
+      !member ||
+      (member.role !== TeamRole.OWNER && member.role !== TeamRole.CAPTAIN)
+    ) {
+      throw new ForbiddenException(
+        'No tienes permisos para gestionar este equipo',
+      );
     }
   }
 }

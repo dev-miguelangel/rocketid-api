@@ -8,7 +8,11 @@ import { TeamGender } from './enums/team-gender.enum';
 import { TeamRole } from './enums/team-role.enum';
 import { SportsService } from '../sports/sports.service';
 import { UsersService } from '../users/users.service';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 
 const mockTeam: Team = {
   id: 'team-uuid-1',
@@ -18,9 +22,31 @@ const mockTeam: Team = {
   color: '#E53935',
   gender: TeamGender.MIXED,
   sportId: 1,
-  sport: { id: 1, name: 'football', label: 'Fútbol', icon: 'sports_soccer', color: '#E53935', status: true, createdAt: new Date(), updatedAt: new Date() },
+  sport: {
+    id: 1,
+    name: 'football',
+    label: 'Fútbol',
+    icon: 'sports_soccer',
+    color: '#E53935',
+    status: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
   ownerId: 'user-uuid-1',
-  owner: { id: 'user-uuid-1', googleId: 'google-1', email: 'owner@test.com', name: 'Owner User', avatar: null, role: 'user' as any, status: 'active' as any, onboardingStep: 0, refreshTokenHash: null, createdAt: new Date(), updatedAt: new Date(), profile: undefined },
+  owner: {
+    id: 'user-uuid-1',
+    googleId: 'google-1',
+    email: 'owner@test.com',
+    name: 'Owner User',
+    avatar: null,
+    role: 'user' as any,
+    status: 'active' as any,
+    onboardingStep: 0,
+    refreshTokenHash: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    profile: undefined,
+  },
   members: [],
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -31,7 +57,20 @@ const mockMember: TeamMember = {
   teamId: 'team-uuid-1',
   team: mockTeam,
   userId: 'user-uuid-2',
-  user: { id: 'user-uuid-2', googleId: 'google-2', email: 'member@test.com', name: 'Member User', avatar: null, role: 'user' as any, status: 'active' as any, onboardingStep: 0, refreshTokenHash: null, createdAt: new Date(), updatedAt: new Date(), profile: undefined },
+  user: {
+    id: 'user-uuid-2',
+    googleId: 'google-2',
+    email: 'member@test.com',
+    name: 'Member User',
+    avatar: null,
+    role: 'user' as any,
+    status: 'active' as any,
+    onboardingStep: 0,
+    refreshTokenHash: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    profile: undefined,
+  },
   role: TeamRole.MEMBER,
   status: MemberStatus.ACTIVE,
   createdAt: new Date(),
@@ -98,12 +137,31 @@ describe('TeamsService', () => {
 
   describe('create', () => {
     it('should create a team and add owner as member', async () => {
-      sportsService.findOne.mockResolvedValue({ id: 1, name: 'football', label: 'Fútbol', icon: 'sports_soccer', color: '#E53935', status: true, createdAt: new Date(), updatedAt: new Date() });
-      teamRepo.create.mockImplementation((data: any) => ({ ...data, id: 'team-uuid-1' }));
-      teamRepo.save.mockImplementation((data: any) => Promise.resolve({ ...mockTeam, ...data }));
+      sportsService.findOne.mockResolvedValue({
+        id: 1,
+        name: 'football',
+        label: 'Fútbol',
+        icon: 'sports_soccer',
+        color: '#E53935',
+        status: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      teamRepo.create.mockImplementation((data: any) => ({
+        ...data,
+        id: 'team-uuid-1',
+      }));
+      teamRepo.save.mockImplementation((data: any) =>
+        Promise.resolve({ ...mockTeam, ...data }),
+      );
       teamRepo.findOne.mockResolvedValue(mockTeam);
-      memberRepo.create.mockImplementation((data: any) => ({ ...data, id: 'member-uuid-1' }));
-      memberRepo.save.mockImplementation((data: any) => Promise.resolve({ ...mockMember, ...data }));
+      memberRepo.create.mockImplementation((data: any) => ({
+        ...data,
+        id: 'member-uuid-1',
+      }));
+      memberRepo.save.mockImplementation((data: any) =>
+        Promise.resolve({ ...mockMember, ...data }),
+      );
 
       const result = await service.create('user-uuid-1', {
         name: 'Test Team',
@@ -123,7 +181,19 @@ describe('TeamsService', () => {
 
   describe('findAll', () => {
     it('should return teams where user is active member', async () => {
-      memberRepo.find.mockResolvedValue([{ id: 'm1', teamId: 'team-uuid-1', userId: 'user-uuid-1', team: mockTeam, user: mockTeam.owner, role: TeamRole.MEMBER, status: MemberStatus.ACTIVE, createdAt: new Date(), updatedAt: new Date() }]);
+      memberRepo.find.mockResolvedValue([
+        {
+          id: 'm1',
+          teamId: 'team-uuid-1',
+          userId: 'user-uuid-1',
+          team: mockTeam,
+          user: mockTeam.owner,
+          role: TeamRole.MEMBER,
+          status: MemberStatus.ACTIVE,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
       teamRepo.find.mockResolvedValue([mockTeam]);
 
       const result = await service.findAll('user-uuid-1');
@@ -153,7 +223,9 @@ describe('TeamsService', () => {
     it('should throw NotFoundException when not found', async () => {
       teamRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.findById('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -170,7 +242,9 @@ describe('TeamsService', () => {
     it('should throw ForbiddenException when user is not owner', async () => {
       teamRepo.findOne.mockResolvedValue(mockTeam);
 
-      await expect(service.remove('team-uuid-1', 'other-user')).rejects.toThrow(ForbiddenException);
+      await expect(service.remove('team-uuid-1', 'other-user')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -178,25 +252,45 @@ describe('TeamsService', () => {
     it('should create pending request when user is not member', async () => {
       teamRepo.findOne.mockResolvedValue(mockTeam);
       memberRepo.findOne.mockResolvedValue(null);
-      memberRepo.create.mockImplementation((data: any) => ({ ...data, id: 'member-uuid-1' }));
-      memberRepo.save.mockImplementation((data: any) => Promise.resolve({ ...mockMember, ...data, status: MemberStatus.PENDING }));
+      memberRepo.create.mockImplementation((data: any) => ({
+        ...data,
+        id: 'member-uuid-1',
+      }));
+      memberRepo.save.mockImplementation((data: any) =>
+        Promise.resolve({
+          ...mockMember,
+          ...data,
+          status: MemberStatus.PENDING,
+        }),
+      );
 
-      const result = await service.requestToJoin('team-uuid-1', 'new-user-uuid');
+      const result = await service.requestToJoin(
+        'team-uuid-1',
+        'new-user-uuid',
+      );
 
       expect(result.status).toBe(MemberStatus.PENDING);
     });
 
     it('should throw BadRequestException when user is already member', async () => {
       teamRepo.findOne.mockResolvedValue(mockTeam);
-      memberRepo.findOne.mockResolvedValue({ ...mockMember, status: MemberStatus.ACTIVE });
+      memberRepo.findOne.mockResolvedValue({
+        ...mockMember,
+        status: MemberStatus.ACTIVE,
+      });
 
-      await expect(service.requestToJoin('team-uuid-1', 'user-uuid-2')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.requestToJoin('team-uuid-1', 'user-uuid-2'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('leave', () => {
     it('should remove member when leaving', async () => {
-      memberRepo.findOne.mockResolvedValue({ ...mockMember, role: TeamRole.MEMBER });
+      memberRepo.findOne.mockResolvedValue({
+        ...mockMember,
+        role: TeamRole.MEMBER,
+      });
 
       await service.leave('team-uuid-1', 'user-uuid-2');
 
@@ -204,9 +298,14 @@ describe('TeamsService', () => {
     });
 
     it('should throw BadRequestException when owner tries to leave', async () => {
-      memberRepo.findOne.mockResolvedValue({ ...mockMember, role: TeamRole.OWNER });
+      memberRepo.findOne.mockResolvedValue({
+        ...mockMember,
+        role: TeamRole.OWNER,
+      });
 
-      await expect(service.leave('team-uuid-1', 'user-uuid-1')).rejects.toThrow(BadRequestException);
+      await expect(service.leave('team-uuid-1', 'user-uuid-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -216,11 +315,20 @@ describe('TeamsService', () => {
       memberRepo.findOne
         .mockResolvedValueOnce({ ...mockMember, role: TeamRole.OWNER }) // checkCanManage
         .mockResolvedValueOnce({ ...mockMember, role: TeamRole.MEMBER }); // get member to update
-      memberRepo.save.mockImplementation((data: any) => Promise.resolve({ ...data }));
+      memberRepo.save.mockImplementation((data: any) =>
+        Promise.resolve({ ...data }),
+      );
 
-      await service.updateMemberRole('team-uuid-1', 'user-uuid-1', 'user-uuid-2', TeamRole.CAPTAIN);
+      await service.updateMemberRole(
+        'team-uuid-1',
+        'user-uuid-1',
+        'user-uuid-2',
+        TeamRole.CAPTAIN,
+      );
 
-      expect(memberRepo.save).toHaveBeenCalledWith(expect.objectContaining({ role: TeamRole.CAPTAIN }));
+      expect(memberRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ role: TeamRole.CAPTAIN }),
+      );
     });
 
     it('should not allow changing owner role', async () => {
@@ -230,7 +338,12 @@ describe('TeamsService', () => {
         .mockResolvedValueOnce({ ...mockMember, role: TeamRole.OWNER }); // get member to update
 
       await expect(
-        service.updateMemberRole('team-uuid-1', 'user-uuid-1', 'user-uuid-2', TeamRole.CAPTAIN),
+        service.updateMemberRole(
+          'team-uuid-1',
+          'user-uuid-1',
+          'user-uuid-2',
+          TeamRole.CAPTAIN,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });

@@ -163,30 +163,33 @@ describe('ProfilesService', () => {
 
     it('throws NotFoundException when no profile matches', async () => {
       const qb = buildQb();
-      qb.getOne.mockResolvedValue(null);
+      qb.getMany.mockResolvedValue([]);
       repo.createQueryBuilder.mockReturnValue(qb);
 
       await expect(service.search('ghost')).rejects.toThrow(NotFoundException);
     });
 
-    it('strips @ and builds OR query by alias, stringId and email', async () => {
+    it('strips @ and builds OR query by alias, stringId and email with LIKE', async () => {
       const profile = { id: 'p-1', alias: 'myalias' } as Profile;
       const qb = buildQb();
-      qb.getOne.mockResolvedValue(profile);
+      qb.getMany.mockResolvedValue([profile]);
       repo.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.search('@MyAlias');
 
-      expect(qb.where).toHaveBeenCalledWith('profile.alias = :alias', {
-        alias: 'myalias',
-      });
-      expect(qb.orWhere).toHaveBeenCalledWith('profile.stringId = :stringId', {
-        stringId: 'MYALIAS',
-      });
-      expect(qb.orWhere).toHaveBeenCalledWith('user.email = :email', {
-        email: 'myalias',
-      });
-      expect(result).toBe(profile);
+      expect(qb.where).toHaveBeenCalledWith(
+        'LOWER(profile.alias) LIKE LOWER(:pattern)',
+        { pattern: '%myalias%' },
+      );
+      expect(qb.orWhere).toHaveBeenCalledWith(
+        'profile.stringId ILIKE :pattern',
+        { pattern: '%myalias%' },
+      );
+      expect(qb.orWhere).toHaveBeenCalledWith(
+        'LOWER(user.email) LIKE LOWER(:pattern)',
+        { pattern: '%myalias%' },
+      );
+      expect(result).toEqual([profile]);
     });
   });
 

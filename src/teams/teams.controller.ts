@@ -54,10 +54,7 @@ export class TeamsController {
   }
 
   @Delete(':id')
-  remove(
-    @Param('id') id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.teamsService.remove(id, req.user.id);
   }
 
@@ -98,18 +95,12 @@ export class TeamsController {
   }
 
   @Post(':id/join')
-  requestToJoin(
-    @Param('id') id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  requestToJoin(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.teamsService.requestToJoin(id, req.user.id);
   }
 
   @Post(':id/leave')
-  leave(
-    @Param('id') id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  leave(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.teamsService.leave(id, req.user.id);
   }
 

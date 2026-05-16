@@ -72,25 +72,25 @@ export class ProfilesService {
     return profile;
   }
 
-  async search(query: string): Promise<Profile> {
+  async search(query: string): Promise<Profile[]> {
     if (!query?.trim())
       throw new BadRequestException('El parámetro q es requerido');
 
-    const normalized = query.replace(/^@/, '');
+    const normalized = query.replace(/^@/, '').toLowerCase();
+    const pattern = `%${normalized}%`;
 
-    const profile = await this.profileRepository
+    const profiles = await this.profileRepository
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .addSelect('user.id')
-      .where('profile.alias = :alias', { alias: normalized.toLowerCase() })
-      .orWhere('profile.stringId = :stringId', {
-        stringId: normalized.toUpperCase(),
-      })
-      .orWhere('user.email = :email', { email: normalized.toLowerCase() })
-      .getOne();
+      .where('LOWER(profile.alias) LIKE LOWER(:pattern)', { pattern })
+      .orWhere('profile.stringId ILIKE :pattern', { pattern })
+      .orWhere('LOWER(user.email) LIKE LOWER(:pattern)', { pattern })
+      .getMany();
 
-    if (!profile) throw new NotFoundException('No se encontró ningún perfil');
-    return profile;
+    if (profiles.length === 0)
+      throw new NotFoundException('No se encontró ningún perfil');
+    return profiles;
   }
 
   async findByAlias(alias: string): Promise<Profile> {
