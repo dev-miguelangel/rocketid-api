@@ -14,6 +14,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
+const buildQb = (): any => ({
+  leftJoinAndSelect: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orWhere: jest.fn().mockReturnThis(),
+  getMany: jest.fn(),
+});
+
 const mockTeam: Team = {
   id: 'team-uuid-1',
   name: 'Test Team',
@@ -97,6 +104,7 @@ describe('TeamsService', () => {
             findOneBy: jest.fn(),
             find: jest.fn(),
             remove: jest.fn(),
+            createQueryBuilder: jest.fn(),
           },
         },
         {
@@ -345,6 +353,49 @@ describe('TeamsService', () => {
           TeamRole.CAPTAIN,
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('search', () => {
+    it('throws BadRequestException when query is empty', async () => {
+      await expect(service.search('')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws NotFoundException when no team matches', async () => {
+      const qb = buildQb();
+      qb.getMany.mockResolvedValue([]);
+      teamRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await expect(service.search('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('returns teams matching name, description or sport name', async () => {
+      const mockTeam = {
+        id: 'team-1',
+        name: 'Los Amigos',
+        description: 'Equipo de fútbol',
+      };
+      const qb = buildQb();
+      qb.getMany.mockResolvedValue([mockTeam]);
+      teamRepo.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.search('fútbol');
+
+      expect(qb.where).toHaveBeenCalledWith(
+        'LOWER(team.name) LIKE LOWER(:pattern)',
+        { pattern: '%fútbol%' },
+      );
+      expect(qb.orWhere).toHaveBeenCalledWith(
+        'LOWER(team.description) LIKE LOWER(:pattern)',
+        { pattern: '%fútbol%' },
+      );
+      expect(qb.orWhere).toHaveBeenCalledWith(
+        'LOWER(sport.name) LIKE LOWER(:pattern)',
+        { pattern: '%fútbol%' },
+      );
+      expect(result).toEqual([mockTeam]);
     });
   });
 });

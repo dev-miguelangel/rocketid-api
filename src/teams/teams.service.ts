@@ -83,6 +83,31 @@ export class TeamsService {
     return team;
   }
 
+  async search(query: string): Promise<Team[]> {
+    if (!query?.trim()) {
+      throw new BadRequestException('El parámetro q es requerido');
+    }
+
+    const normalized = query.toLowerCase();
+    const pattern = `%${normalized}%`;
+
+    const teams = await this.teamRepository
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.sport', 'sport')
+      .leftJoinAndSelect('team.owner', 'owner')
+      .leftJoinAndSelect('owner.profile', 'profile')
+      .where('LOWER(team.name) LIKE LOWER(:pattern)', { pattern })
+      .orWhere('LOWER(team.description) LIKE LOWER(:pattern)', { pattern })
+      .orWhere('LOWER(sport.name) LIKE LOWER(:pattern)', { pattern })
+      .getMany();
+
+    if (teams.length === 0) {
+      throw new NotFoundException('No se encontró ningún equipo');
+    }
+
+    return teams;
+  }
+
   async update(id: string, userId: string, dto: UpdateTeamDto): Promise<Team> {
     const team = await this.findById(id);
     await this.checkCanManage(userId, team);

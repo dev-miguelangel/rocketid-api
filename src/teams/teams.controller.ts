@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Query,
   Patch,
   Post,
   Request,
@@ -37,6 +38,11 @@ export class TeamsController {
   @Get()
   findAll(@Request() req: AuthenticatedRequest) {
     return this.teamsService.findAll(req.user.id);
+  }
+
+  @Get('search')
+  search(@Query('q') q: string) {
+    return this.teamsService.search(q);
   }
 
   @Get(':id')
