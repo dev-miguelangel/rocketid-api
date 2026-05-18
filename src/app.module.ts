@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { TeamsModule } from './teams/teams.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { PendingActionsModule } from './pending-actions/pending-actions.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ActivitiesModule } from './activities/activities.module';
     AdminModule,
     TeamsModule,
     ActivitiesModule,
+    PendingActionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
