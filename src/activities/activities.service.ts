@@ -23,6 +23,14 @@ import { ListActivitiesQueryDto } from './dto/list-activities-query.dto';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
+/**
+ * An activity enriched with the organizer's profile identifiers as flat fields.
+ */
+export type ActivityWithOrganizer = Activity & {
+  organizer_alias: string | null;
+  organizer_stringId: string | null;
+};
+
 @Injectable()
 export class ActivitiesService {
   constructor(
@@ -34,7 +42,10 @@ export class ActivitiesService {
     private readonly teamsService: TeamsService,
   ) {}
 
-  async create(userId: string, dto: CreateActivityDto): Promise<Activity> {
+  async create(
+    userId: string,
+    dto: CreateActivityDto,
+  ): Promise<ActivityWithOrganizer> {
     await this.sportsService.findOne(dto.sportId);
     this.validateDates(
       dto.startsAt,
@@ -77,11 +88,14 @@ export class ActivitiesService {
     return this.findById(saved.id);
   }
 
-  async findAll(query: ListActivitiesQueryDto): Promise<Activity[]> {
+  async findAll(
+    query: ListActivitiesQueryDto,
+  ): Promise<ActivityWithOrganizer[]> {
     const qb = this.activityRepository
       .createQueryBuilder('activity')
       .leftJoinAndSelect('activity.sport', 'sport')
       .leftJoinAndSelect('activity.organizer', 'organizer')
+      .leftJoinAndSelect('organizer.profile', 'organizerProfile')
       .leftJoinAndSelect('activity.teamOne', 'teamOne')
       .leftJoinAndSelect('activity.teamTwo', 'teamTwo')
       .leftJoinAndSelect('activity.team', 'team');
@@ -110,10 +124,11 @@ export class ActivitiesService {
       );
     }
 
-    return qb.orderBy('activity.startsAt', 'ASC').getMany();
+    const activities = await qb.orderBy('activity.startsAt', 'ASC').getMany();
+    return activities.map((activity) => this.withOrganizerProfile(activity));
   }
 
-  async findById(id: string): Promise<Activity> {
+  async findById(id: string): Promise<ActivityWithOrganizer> {
     const activity = await this.activityRepository.findOne({
       where: { id },
       relations: [
@@ -130,10 +145,10 @@ export class ActivitiesService {
       throw new NotFoundException('Actividad no encontrada');
     }
 
-    return activity;
+    return this.withOrganizerProfile(activity);
   }
 
-  async findMine(userId: string): Promise<Activity[]> {
+  async findMine(userId: string): Promise<ActivityWithOrganizer[]> {
     const participantRows = await this.participantRepository.find({
       where: { userId },
       select: ['activityId'],
@@ -144,6 +159,7 @@ export class ActivitiesService {
       .createQueryBuilder('activity')
       .leftJoinAndSelect('activity.sport', 'sport')
       .leftJoinAndSelect('activity.organizer', 'organizer')
+      .leftJoinAndSelect('organizer.profile', 'organizerProfile')
       .leftJoinAndSelect('activity.teamOne', 'teamOne')
       .leftJoinAndSelect('activity.teamTwo', 'teamTwo')
       .leftJoinAndSelect('activity.team', 'team');
@@ -157,14 +173,15 @@ export class ActivitiesService {
       qb.where('activity.organizerId = :userId', { userId });
     }
 
-    return qb.orderBy('activity.startsAt', 'ASC').getMany();
+    const activities = await qb.orderBy('activity.startsAt', 'ASC').getMany();
+    return activities.map((activity) => this.withOrganizerProfile(activity));
   }
 
   async update(
     id: string,
     userId: string,
     dto: UpdateActivityDto,
-  ): Promise<Activity> {
+  ): Promise<ActivityWithOrganizer> {
     const activity = await this.findById(id);
     await this.checkCanManage(userId, activity);
 
@@ -210,7 +227,7 @@ export class ActivitiesService {
     return this.findById(id);
   }
 
-  async cancel(id: string, userId: string): Promise<Activity> {
+  async cancel(id: string, userId: string): Promise<ActivityWithOrganizer> {
     const activity = await this.findById(id);
     await this.checkCanManage(userId, activity);
     activity.status = ActivityStatus.CANCELLED;
@@ -226,6 +243,18 @@ export class ActivitiesService {
       );
     }
     await this.activityRepository.remove(activity);
+  }
+
+  /**
+   * Adds the organizer's profile identifiers (alias, stringId) as flat fields
+   * on the activity response.
+   */
+  private withOrganizerProfile(activity: Activity): ActivityWithOrganizer {
+    return {
+      ...activity,
+      organizer_alias: activity.organizer?.profile?.alias ?? null,
+      organizer_stringId: activity.organizer?.profile?.stringId ?? null,
+    };
   }
 
   /**

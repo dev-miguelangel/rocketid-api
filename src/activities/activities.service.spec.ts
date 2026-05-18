@@ -99,19 +99,40 @@ describe('ActivitiesService', () => {
   });
 
   describe('create', () => {
-    it('creates an open-call activity', async () => {
+    it('creates an open-call activity and flattens the organizer profile', async () => {
       activityRepository.findOne.mockResolvedValue({
         id: 'activity-1',
         type: ActivityType.OPEN_CALL,
+        organizer: {
+          id: 'user-1',
+          profile: { alias: 'anap', stringId: 'ABC123' },
+        },
       });
 
       const result = await service.create('user-1', openCallDto());
 
-      expect(result).toEqual({
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: 'activity-1',
+          type: ActivityType.OPEN_CALL,
+          organizer_alias: 'anap',
+          organizer_stringId: 'ABC123',
+        }),
+      );
+      expect(sportsService.findOne).toHaveBeenCalledWith(1);
+    });
+
+    it('returns null organizer identifiers when the organizer has no profile', async () => {
+      activityRepository.findOne.mockResolvedValue({
         id: 'activity-1',
         type: ActivityType.OPEN_CALL,
+        organizer: { id: 'user-1' },
       });
-      expect(sportsService.findOne).toHaveBeenCalledWith(1);
+
+      const result = await service.create('user-1', openCallDto());
+
+      expect(result.organizer_alias).toBeNull();
+      expect(result.organizer_stringId).toBeNull();
     });
 
     it('rejects when end is not after start', async () => {
