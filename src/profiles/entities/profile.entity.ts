@@ -26,6 +26,18 @@ export class Profile {
   @Column({ nullable: true, type: 'date' })
   birthDate!: string | null;
 
+  get age(): number | null {
+    if (!this.birthDate) return null;
+    const birth = new Date(this.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
   @Column({ type: 'enum', enum: Gender, nullable: true })
   gender!: Gender | null;
 

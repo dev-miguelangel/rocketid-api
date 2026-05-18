@@ -117,7 +117,7 @@ export class AuthController {
       user as User & { profile?: Profile };
     if (profile) {
       const { contacts, addedBy, ...profileData } = profile;
-      return { ...userData, profile: profileData };
+      return { ...userData, profile: { ...profileData, age: profile.age } };
     }
     return userData;
   }
