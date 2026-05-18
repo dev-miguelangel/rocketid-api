@@ -35,6 +35,7 @@ describe('ActivitiesService', () => {
     create: jest.Mock;
     save: jest.Mock;
     find: jest.Mock;
+    count: jest.Mock;
   };
   let sportsService: { findOne: jest.Mock };
   let teamsService: {
@@ -70,6 +71,7 @@ describe('ActivitiesService', () => {
       create: jest.fn((value: Partial<ActivityParticipant>) => value),
       save: jest.fn().mockResolvedValue([]),
       find: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
     };
     sportsService = { findOne: jest.fn().mockResolvedValue({ id: 1 }) };
     teamsService = {
@@ -133,6 +135,34 @@ describe('ActivitiesService', () => {
 
       expect(result.organizer_alias).toBeNull();
       expect(result.organizer_stringId).toBeNull();
+    });
+
+    it('reports used and available spots from confirmed participants', async () => {
+      activityRepository.findOne.mockResolvedValue({
+        id: 'activity-1',
+        type: ActivityType.OPEN_CALL,
+        maxParticipants: 10,
+      });
+      participantRepository.count.mockResolvedValue(3);
+
+      const result = await service.create('user-1', openCallDto());
+
+      expect(result.usedSpots).toBe(3);
+      expect(result.availableSpots).toBe(7);
+    });
+
+    it('reports null available spots when there is no capacity limit', async () => {
+      activityRepository.findOne.mockResolvedValue({
+        id: 'activity-1',
+        type: ActivityType.CHALLENGE,
+        maxParticipants: null,
+      });
+      participantRepository.count.mockResolvedValue(5);
+
+      const result = await service.create('user-1', openCallDto());
+
+      expect(result.usedSpots).toBe(5);
+      expect(result.availableSpots).toBeNull();
     });
 
     it('rejects when end is not after start', async () => {

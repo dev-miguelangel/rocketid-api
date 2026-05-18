@@ -24,11 +24,17 @@ import { ListActivitiesQueryDto } from './dto/list-activities-query.dto';
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 /**
- * An activity enriched with the organizer's profile identifiers as flat fields.
+ * An activity enriched for API responses: the organizer's profile identifiers
+ * as flat fields and the used/available spot counts.
+ *
+ * `usedSpots` is the number of confirmed participants. `availableSpots` is the
+ * remaining capacity, or `null` when the activity has no `maxParticipants`.
  */
-export type ActivityWithOrganizer = Activity & {
+export type ActivityResponse = Activity & {
   organizer_alias: string | null;
   organizer_stringId: string | null;
+  usedSpots: number;
+  availableSpots: number | null;
 };
 
 @Injectable()
@@ -45,7 +51,7 @@ export class ActivitiesService {
   async create(
     userId: string,
     dto: CreateActivityDto,
-  ): Promise<ActivityWithOrganizer> {
+  ): Promise<ActivityResponse> {
     await this.sportsService.findOne(dto.sportId);
     this.validateDates(
       dto.startsAt,
@@ -88,9 +94,7 @@ export class ActivitiesService {
     return this.findById(saved.id);
   }
 
-  async findAll(
-    query: ListActivitiesQueryDto,
-  ): Promise<ActivityWithOrganizer[]> {
+  async findAll(query: ListActivitiesQueryDto): Promise<ActivityResponse[]> {
     const qb = this.activityRepository
       .createQueryBuilder('activity')
       .leftJoinAndSelect('activity.sport', 'sport')
@@ -125,10 +129,10 @@ export class ActivitiesService {
     }
 
     const activities = await qb.orderBy('activity.startsAt', 'ASC').getMany();
-    return activities.map((activity) => this.withOrganizerProfile(activity));
+    return this.attachMeta(activities);
   }
 
-  async findById(id: string): Promise<ActivityWithOrganizer> {
+  async findById(id: string): Promise<ActivityResponse> {
     const activity = await this.activityRepository.findOne({
       where: { id },
       relations: [
@@ -145,10 +149,11 @@ export class ActivitiesService {
       throw new NotFoundException('Actividad no encontrada');
     }
 
-    return this.withOrganizerProfile(activity);
+    const usedSpots = await this.countConfirmed(activity.id);
+    return this.buildResponse(activity, usedSpots);
   }
 
-  async findMine(userId: string): Promise<ActivityWithOrganizer[]> {
+  async findMine(userId: string): Promise<ActivityResponse[]> {
     const participantRows = await this.participantRepository.find({
       where: { userId },
       select: ['activityId'],
@@ -174,14 +179,14 @@ export class ActivitiesService {
     }
 
     const activities = await qb.orderBy('activity.startsAt', 'ASC').getMany();
-    return activities.map((activity) => this.withOrganizerProfile(activity));
+    return this.attachMeta(activities);
   }
 
   async update(
     id: string,
     userId: string,
     dto: UpdateActivityDto,
-  ): Promise<ActivityWithOrganizer> {
+  ): Promise<ActivityResponse> {
     const activity = await this.findById(id);
     await this.checkCanManage(userId, activity);
 
@@ -227,7 +232,7 @@ export class ActivitiesService {
     return this.findById(id);
   }
 
-  async cancel(id: string, userId: string): Promise<ActivityWithOrganizer> {
+  async cancel(id: string, userId: string): Promise<ActivityResponse> {
     const activity = await this.findById(id);
     await this.checkCanManage(userId, activity);
     activity.status = ActivityStatus.CANCELLED;
@@ -246,15 +251,62 @@ export class ActivitiesService {
   }
 
   /**
-   * Adds the organizer's profile identifiers (alias, stringId) as flat fields
-   * on the activity response.
+   * Builds the API response: flattens the organizer's profile identifiers and
+   * adds the used/available spot counts.
    */
-  private withOrganizerProfile(activity: Activity): ActivityWithOrganizer {
+  private buildResponse(
+    activity: Activity,
+    usedSpots: number,
+  ): ActivityResponse {
     return {
       ...activity,
       organizer_alias: activity.organizer?.profile?.alias ?? null,
       organizer_stringId: activity.organizer?.profile?.stringId ?? null,
+      usedSpots,
+      availableSpots:
+        activity.maxParticipants == null
+          ? null
+          : Math.max(0, activity.maxParticipants - usedSpots),
     };
+  }
+
+  /** Counts the confirmed participants of a single activity. */
+  private countConfirmed(activityId: string): Promise<number> {
+    return this.participantRepository.count({
+      where: { activityId, status: ParticipantStatus.CONFIRMED },
+    });
+  }
+
+  /** Enriches a list of activities with organizer profile and spot counts. */
+  private async attachMeta(
+    activities: Activity[],
+  ): Promise<ActivityResponse[]> {
+    if (activities.length === 0) {
+      return [];
+    }
+    const counts = await this.countConfirmedByActivity(
+      activities.map((activity) => activity.id),
+    );
+    return activities.map((activity) =>
+      this.buildResponse(activity, counts.get(activity.id) ?? 0),
+    );
+  }
+
+  /** Counts confirmed participants grouped by activity in a single query. */
+  private async countConfirmedByActivity(
+    activityIds: string[],
+  ): Promise<Map<string, number>> {
+    const rows = await this.participantRepository
+      .createQueryBuilder('participant')
+      .select('participant.activityId', 'activityId')
+      .addSelect('COUNT(*)', 'count')
+      .where('participant.activityId IN (:...activityIds)', { activityIds })
+      .andWhere('participant.status = :status', {
+        status: ParticipantStatus.CONFIRMED,
+      })
+      .groupBy('participant.activityId')
+      .getRawMany<{ activityId: string; count: string }>();
+    return new Map(rows.map((row) => [row.activityId, Number(row.count)]));
   }
 
   /**
