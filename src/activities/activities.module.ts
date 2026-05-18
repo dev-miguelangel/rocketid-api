@@ -5,6 +5,8 @@ import { TeamsModule } from '../teams/teams.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { Activity } from './entities/activity.entity';
 import { ActivityParticipant } from './entities/activity-participant.entity';
+import { ActivitiesController } from './activities.controller';
+import { ActivitiesService } from './activities.service';
 
 @Module({
   imports: [
@@ -13,8 +15,8 @@ import { ActivityParticipant } from './entities/activity-participant.entity';
     TeamsModule,
     ProfilesModule,
   ],
-  controllers: [],
-  providers: [],
-  exports: [],
+  controllers: [ActivitiesController],
+  providers: [ActivitiesService],
+  exports: [ActivitiesService],
 })
 export class ActivitiesModule {}
