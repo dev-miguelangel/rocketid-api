@@ -7,6 +7,8 @@ import { Activity } from './entities/activity.entity';
 import { ActivityParticipant } from './entities/activity-participant.entity';
 import { ActivitiesController } from './activities.controller';
 import { ActivitiesService } from './activities.service';
+import { ActivityParticipantsController } from './activity-participants.controller';
+import { ActivityParticipantsService } from './activity-participants.service';
 
 @Module({
   imports: [
@@ -15,8 +17,8 @@ import { ActivitiesService } from './activities.service';
     TeamsModule,
     ProfilesModule,
   ],
-  controllers: [ActivitiesController],
-  providers: [ActivitiesService],
+  controllers: [ActivitiesController, ActivityParticipantsController],
+  providers: [ActivitiesService, ActivityParticipantsService],
   exports: [ActivitiesService],
 })
 export class ActivitiesModule {}
